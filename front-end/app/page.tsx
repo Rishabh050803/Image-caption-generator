@@ -4,10 +4,11 @@ import { useState, useEffect } from "react"
 import ImageUpload from "@/components/image-upload"
 import CaptionGenerator from "@/components/caption-generator"
 import TeamSection from "@/components/team-section"
-import { generateCaption } from "@/lib/caption-service"
+import { generateCaption,generateBasicCaption,generateAdvancedCaption,generateHashtags} from "@/lib/caption-service"
 import { Button } from "@/components/ui/button"
 import { Moon, Sun, Github } from "lucide-react"
 import Link from "next/link"
+import { hash } from "crypto"
 
 // Replace this with your actual GitHub repository URL
 const GITHUB_REPO_URL = "https://github.com/yourusername/image-caption-generator"
@@ -21,6 +22,7 @@ export default function Home() {
   const [selectedModel, setSelectedModel] = useState<"basic" | "advanced">("basic")
   const [tone, setTone] = useState<string>("formal")
   const [customPrompt, setCustomPrompt] = useState<string>("")
+  const [hashtags, setHashtags] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(true)
 
   // Initialize dark mode based on user preference
@@ -54,28 +56,63 @@ export default function Home() {
     setIsEditing(false)
   }
 
-  const handleGenerateCaption = async () => {
-    if (!uploadedImage) return
+  const handleGenerateCaption = async (containHashtags: boolean) => {
+    if (!uploadedImage) return;
 
-    setIsGenerating(true)
-    setIsEditing(false)
+    setIsGenerating(true);
+    setIsEditing(false);
 
     try {
-      const generatedCaption = await generateCaption({
+      let generatedCaption = await generateBasicCaption({
         image: uploadedImage,
         model: selectedModel,
         tone: selectedModel === "advanced" ? tone : "formal",
         customPrompt: selectedModel === "advanced" ? customPrompt : "",
-      })
+        containHashtags, // Use the parameter here
+        prevCaption: caption,
+      });
 
-      setCaption(generatedCaption)
-      setEditedCaption(generatedCaption)
+
+      if(selectedModel === "advanced" ){
+        let refinedCaption = await generateAdvancedCaption({
+          image: uploadedImage,
+          model: selectedModel,
+          tone: selectedModel === "advanced" ? tone : "formal",
+          customPrompt: selectedModel === "advanced" ? customPrompt : "",
+          containHashtags, // Use the parameter here
+          prevCaption: caption,
+        });
+        if(refinedCaption!="error"){
+          generatedCaption = refinedCaption;
+        }
+        else{
+          console.log("Error in refining caption");
+        }
+      }
+
+      if(containHashtags){
+        let hashtags = await generateHashtags(generatedCaption);
+        if(hashtags.length>0){
+          hashtags = hashtags;
+          if(hashtags.length>5){
+            hashtags = hashtags.slice(0,5);
+          }
+          generatedCaption += "\n\n" + hashtags.join(" ");
+        }
+        else{
+          console.log("Error in generating hashtags");
+        }
+      }
+
+      setCaption(generatedCaption);
+      setEditedCaption(generatedCaption);
     } catch (error) {
-      console.error("Error generating caption:", error)
+      console.error("Error generating caption:", error);
     } finally {
-      setIsGenerating(false)
+      setIsGenerating(false);
     }
-  }
+  };
+
 
   const saveEditedCaption = () => {
     setCaption(editedCaption)
@@ -127,9 +164,10 @@ export default function Home() {
               setTone={setTone}
               customPrompt={customPrompt}
               setCustomPrompt={setCustomPrompt}
-              onGenerateCaption={handleGenerateCaption}
+              onGenerateCaption={handleGenerateCaption}  // Now accepts the hashtag flag
               imageUploaded={!!uploadedImage}
             />
+
           </div>
         </div>
 

@@ -3,10 +3,25 @@ import os
 import json
 import requests
 from groq import Groq
+from dotenv import load_dotenv
+
+
+# Get the absolute path of the parent directory
+parent_dir = os.path.abspath("/home/rishabh/coding/minor_project/Image-caption-app/")
+
+# Construct the full path to the .env file
+dotenv_path = os.path.join(parent_dir, ".env")
+
+# Load the .env file
+load_dotenv(dotenv_path=dotenv_path)
+
+# Get the API key
+api_key = os.getenv("API_KEY")
 
 # Constants (use environment variables for production)
 HF_API_URL = "https://rishabh2234-image-captionator.hf.space/generate_caption/"
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "your_default_api_key")
+GROQ_API_KEY = api_key
+
 
 # Initialize Groq client
 client = Groq(api_key=GROQ_API_KEY)
@@ -18,6 +33,7 @@ def caption_with_hf_api(image_path: str) -> str:
             files = {"file": img_file}
             response = requests.post(HF_API_URL, headers=headers, files=files)
     except Exception as e:
+        print("Failed to open image:", e)
         return f"Failed to open image: {e}"
 
     if response.status_code == 200:
@@ -25,6 +41,7 @@ def caption_with_hf_api(image_path: str) -> str:
             data = response.json()
             return data.get("caption", "No caption found in response.")
         except Exception as e:
+            print("Error parsing response:", e)
             return f"Error parsing response: {e}"
     else:
         return f"Error {response.status_code}: {response.text}"
