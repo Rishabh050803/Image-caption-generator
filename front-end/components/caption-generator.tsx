@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -50,8 +50,12 @@ export default function CaptionGenerator({
   const [copied, setCopied] = useState(false);
   const [captionVisible, setCaptionVisible] = useState(false);
   const [includeHashtags, setIncludeHashtags] = useState(false);
+  const [currentLoadingStep, setCurrentLoadingStep] = useState(0);
+  const [showLongWaitMessage, setShowLongWaitMessage] = useState(false);
+  const loadingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const longWaitTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Define loading states for the multi-step loader
+  // Define loading states for each step
   const loadingStates = [
     { text: "Analyzing your image..." },
     { text: "Identifying key elements..." },
@@ -90,6 +94,60 @@ export default function CaptionGenerator({
     ];
   }
 
+  // Update loading states based on generation step
+  useEffect(() => {
+    // Clean up any existing timers
+    if (loadingTimerRef.current) {
+      clearTimeout(loadingTimerRef.current);
+    }
+    if (longWaitTimerRef.current) {
+      clearTimeout(longWaitTimerRef.current);
+    }
+    
+    setShowLongWaitMessage(false);
+    
+    if (isGenerating) {
+      setCurrentLoadingStep(0);
+      
+      // Progress through loading steps
+      const progressLoading = () => {
+        setCurrentLoadingStep(prev => {
+          // Don't exceed the number of loading states
+          if (prev < currentLoadingStates.length - 1) {
+            return prev + 1;
+          }
+          return prev;
+        });
+      };
+      
+      // Set up step progression timers
+      let stepTime = 2500; // Base time per step
+      
+      // Set up the loading steps to progress
+      for (let i = 1; i < currentLoadingStates.length; i++) {
+        loadingTimerRef.current = setTimeout(() => {
+          progressLoading();
+        }, i * stepTime);
+      }
+      
+      // Set up the "taking longer than expected" message timer
+      const totalExpectedTime = currentLoadingStates.length * stepTime + 5000;
+      longWaitTimerRef.current = setTimeout(() => {
+        setShowLongWaitMessage(true);
+      }, totalExpectedTime);
+    }
+    
+    // Clean up function
+    return () => {
+      if (loadingTimerRef.current) {
+        clearTimeout(loadingTimerRef.current);
+      }
+      if (longWaitTimerRef.current) {
+        clearTimeout(longWaitTimerRef.current);
+      }
+    };
+  }, [isGenerating, currentLoadingStates.length]);
+
   // Reset animation when caption changes
   useEffect(() => {
     setCaptionVisible(false);
@@ -97,7 +155,7 @@ export default function CaptionGenerator({
       setCaptionVisible(true);
     }, 100);
     return () => clearTimeout(timer);
-  }, [setCaptionVisible]);
+  }, [caption]);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(caption);
@@ -105,14 +163,33 @@ export default function CaptionGenerator({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // The caption loading UI component
+  const renderLoadingContent = () => {
+    // Show the current loading step, or the "taking longer" message
+    if (showLongWaitMessage) {
+      return (
+        <>
+          <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+          <p className="text-sm text-muted-foreground dark:text-gray-400">
+            Taking longer than expected. Please wait...
+          </p>
+        </>
+      );
+    }
+    
+    return (
+      <>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground dark:text-gray-400">
+          {currentLoadingStates[currentLoadingStep]?.text || "Generating your caption..."}
+        </p>
+      </>
+    );
+  };
   
   return (
     <Card className="w-full h-full flex flex-col dark:bg-gray-800 dark:border-gray-700">
-      {/* Multi-step loader overlay */}
-      <MultiStepLoader loadingStates={currentLoadingStates} loading={isGenerating} duration={2000} />
-      
       <CardContent className="p-6 flex flex-col h-full">
-        {/* Rest of your component remains the same */}
         <div className="space-y-4 flex-1">
           {/* Model Selection */}
           <div className="space-y-2">
@@ -229,13 +306,21 @@ export default function CaptionGenerator({
                 </div>
               )}
             </div>
-            <div className="border rounded-md p-3 min-h-[120px] bg-muted/30 dark:bg-gray-700 dark:border-gray-600">
+            <div className="border rounded-md p-3 min-h-[150px] bg-muted/30 dark:bg-gray-700 dark:border-gray-600">
               {isGenerating ? (
-                <div className="flex flex-col items-center justify-center h-full space-y-2">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                  <p className="text-sm text-muted-foreground dark:text-gray-400">
-                    Generating your caption...
-                  </p>
+                <div className="flex flex-col items-center justify-center h-full space-y-4">
+                  {renderLoadingContent()}
+                  <div className="w-full max-w-xs bg-gray-200 dark:bg-gray-800 rounded-full h-1.5">
+                    <div 
+                      className="bg-blue-600 h-1.5 rounded-full transition-all duration-500"
+                      style={{ 
+                        width: `${Math.min(
+                          ((currentLoadingStep + 1) / currentLoadingStates.length) * 100,
+                          100
+                        )}%` 
+                      }}
+                    ></div>
+                  </div>
                 </div>
               ) : caption ? (
                 isEditing ? (
