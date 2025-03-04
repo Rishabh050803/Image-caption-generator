@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Copy, Edit, Check, Save } from "lucide-react";
+import { MultiStepLoader } from "@/components/ui/multi-step-loader";
 
 interface CaptionGeneratorProps {
   caption: string;
@@ -17,6 +18,7 @@ interface CaptionGeneratorProps {
   setIsEditing: (isEditing: boolean) => void;
   saveEditedCaption: () => void;
   isGenerating: boolean;
+  generationStep: "idle" | "basic" | "advanced" | "hashtags";
   selectedModel: "basic" | "advanced";
   setSelectedModel: (model: "basic" | "advanced") => void;
   tone: string;
@@ -35,6 +37,7 @@ export default function CaptionGenerator({
   setIsEditing,
   saveEditedCaption,
   isGenerating,
+  generationStep,
   selectedModel,
   setSelectedModel,
   tone,
@@ -46,7 +49,46 @@ export default function CaptionGenerator({
 }: CaptionGeneratorProps) {
   const [copied, setCopied] = useState(false);
   const [captionVisible, setCaptionVisible] = useState(false);
-  const [includeHashtags, setIncludeHashtags] = useState(false); // New state for hashtags
+  const [includeHashtags, setIncludeHashtags] = useState(false);
+
+  // Define loading states for the multi-step loader
+  const loadingStates = [
+    { text: "Analyzing your image..." },
+    { text: "Identifying key elements..." },
+    { text: "Understanding image context..." },
+    { text: "Drafting basic caption..." },
+  ];
+
+  // Add advanced loading states if using advanced mode
+  const advancedLoadingStates = [
+    ...loadingStates,
+    { text: "Applying your custom tone preferences..." },
+    { text: "Refining caption style..." },
+    { text: "Incorporating your custom instructions..." },
+    { text: "Polishing final wording..." },
+  ];
+
+  // Add hashtag states if including hashtags
+  const hashtagLoadingStates = [
+    ...(selectedModel === "advanced" ? advancedLoadingStates : loadingStates),
+    { text: "Identifying trending topics..." },
+    { text: "Generating relevant hashtags..." },
+    { text: "Finalizing caption with hashtags..." },
+  ];
+
+  // Determine which set of loading states to use
+  let currentLoadingStates = loadingStates;
+  if (selectedModel === "advanced" && includeHashtags) {
+    currentLoadingStates = hashtagLoadingStates;
+  } else if (selectedModel === "advanced") {
+    currentLoadingStates = advancedLoadingStates;
+  } else if (includeHashtags) {
+    currentLoadingStates = [
+      ...loadingStates,
+      { text: "Generating relevant hashtags..." },
+      { text: "Finalizing caption with hashtags..." },
+    ];
+  }
 
   // Reset animation when caption changes
   useEffect(() => {
@@ -63,9 +105,14 @@ export default function CaptionGenerator({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  
   return (
     <Card className="w-full h-full flex flex-col dark:bg-gray-800 dark:border-gray-700">
+      {/* Multi-step loader overlay */}
+      <MultiStepLoader loadingStates={currentLoadingStates} loading={isGenerating} duration={2000} />
+      
       <CardContent className="p-6 flex flex-col h-full">
+        {/* Rest of your component remains the same */}
         <div className="space-y-4 flex-1">
           {/* Model Selection */}
           <div className="space-y-2">
@@ -150,66 +197,65 @@ export default function CaptionGenerator({
           </div>
 
           {/* Caption Display */}
-<div className="space-y-2 flex-1">
-  <div className="flex justify-between items-center">
-    <Label className="dark:text-gray-200">Generated Caption</Label>
-    {caption && !isGenerating && (
-      <div className="flex space-x-2">
-        {isEditing ? (
-          <Button variant="ghost" size="sm" onClick={saveEditedCaption}>
-            <Save className="h-4 w-4 mr-1" />
-            Save
-          </Button>
-        ) : (
-          <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
-            <Edit className="h-4 w-4 mr-1" />
-            Edit
-          </Button>
-        )}
-        <Button variant="ghost" size="sm" onClick={copyToClipboard} disabled={isEditing}>
-          {copied ? (
-            <>
-              <Check className="h-4 w-4 mr-1" />
-              Copied
-            </>
-          ) : (
-            <>
-              <Copy className="h-4 w-4 mr-1" />
-              Copy
-            </>
-          )}
-        </Button>
-      </div>
-    )}
-  </div>
-  <div className="border rounded-md p-3 min-h-[120px] bg-muted/30 dark:bg-gray-700 dark:border-gray-600">
-    {isGenerating ? (
-      <div className="flex flex-col items-center justify-center h-full space-y-2">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground dark:text-gray-400">
-          Generating your caption...
-        </p>
-      </div>
-    ) : caption ? (
-      isEditing ? (
-        <Textarea
-          value={editedCaption}
-          onChange={(e) => setEditedCaption(e.target.value)}
-          className="w-full h-full min-h-[100px] border-0 p-0 focus-visible:ring-0 resize-none dark:bg-gray-700 dark:text-gray-200"
-        />
-      ) : (
-        <p className={`transition-opacity duration-500 dark:text-gray-200 ${captionVisible ? "opacity-100" : "opacity-0"}`}>
-          {caption}
-        </p>
-      )
-    ) : (
-      <p className="text-muted-foreground text-sm dark:text-gray-400">
-        No caption generated yet.
-      </p>
-    )}
-  </div>
-</div>
-
+          <div className="space-y-2 flex-1">
+            <div className="flex justify-between items-center">
+              <Label className="dark:text-gray-200">Generated Caption</Label>
+              {caption && !isGenerating && (
+                <div className="flex space-x-2">
+                  {isEditing ? (
+                    <Button variant="ghost" size="sm" onClick={saveEditedCaption}>
+                      <Save className="h-4 w-4 mr-1" />
+                      Save
+                    </Button>
+                  ) : (
+                    <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={copyToClipboard} disabled={isEditing}>
+                    {copied ? (
+                      <>
+                        <Check className="h-4 w-4 mr-1" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 mr-1" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div className="border rounded-md p-3 min-h-[120px] bg-muted/30 dark:bg-gray-700 dark:border-gray-600">
+              {isGenerating ? (
+                <div className="flex flex-col items-center justify-center h-full space-y-2">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                  <p className="text-sm text-muted-foreground dark:text-gray-400">
+                    Generating your caption...
+                  </p>
+                </div>
+              ) : caption ? (
+                isEditing ? (
+                  <Textarea
+                    value={editedCaption}
+                    onChange={(e) => setEditedCaption(e.target.value)}
+                    className="w-full h-full min-h-[100px] border-0 p-0 focus-visible:ring-0 resize-none dark:bg-gray-700 dark:text-gray-200"
+                  />
+                ) : (
+                  <p className={`transition-opacity duration-500 dark:text-gray-200 ${captionVisible ? "opacity-100" : "opacity-0"}`}>
+                    {caption}
+                  </p>
+                )
+              ) : (
+                <p className="text-muted-foreground text-sm dark:text-gray-400">
+                  No caption generated yet.
+                </p>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Generate Caption Button */}

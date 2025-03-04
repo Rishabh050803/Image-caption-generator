@@ -24,6 +24,7 @@ export default function Home() {
   const [customPrompt, setCustomPrompt] = useState<string>("")
   const [hashtags, setHashtags] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(true)
+  const [generationStep, setGenerationStep] = useState<"idle" | "basic" | "advanced" | "hashtags">("idle")
 
   // Initialize dark mode based on user preference
   useEffect(() => {
@@ -61,6 +62,7 @@ export default function Home() {
 
     setIsGenerating(true);
     setIsEditing(false);
+    setGenerationStep("basic");
 
     try {
       let generatedCaption = await generateBasicCaption({
@@ -68,18 +70,19 @@ export default function Home() {
         model: selectedModel,
         tone: selectedModel === "advanced" ? tone : "formal",
         customPrompt: selectedModel === "advanced" ? customPrompt : "",
-        containHashtags, // Use the parameter here
+        containHashtags, 
         prevCaption: caption,
       });
 
 
       if(selectedModel === "advanced" ){
+        setGenerationStep("advanced");
         let refinedCaption = await generateAdvancedCaption({
           image: uploadedImage,
           model: selectedModel,
           tone: selectedModel === "advanced" ? tone : "formal",
           customPrompt: selectedModel === "advanced" ? customPrompt : "",
-          containHashtags, // Use the parameter here
+          containHashtags, 
           prevCaption: caption,
         });
         if(refinedCaption!="error"){
@@ -91,6 +94,7 @@ export default function Home() {
       }
 
       if(containHashtags){
+        setGenerationStep("hashtags");
         let hashtags = await generateHashtags(generatedCaption);
         if(hashtags.length>0){
           hashtags = hashtags;
@@ -110,6 +114,7 @@ export default function Home() {
       console.error("Error generating caption:", error);
     } finally {
       setIsGenerating(false);
+      setGenerationStep("idle");
     }
   };
 
@@ -158,6 +163,7 @@ export default function Home() {
               setIsEditing={setIsEditing}
               saveEditedCaption={saveEditedCaption}
               isGenerating={isGenerating}
+              generationStep={generationStep}  // Pass the new state
               selectedModel={selectedModel}
               setSelectedModel={setSelectedModel}
               tone={tone}
