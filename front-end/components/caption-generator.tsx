@@ -1,32 +1,31 @@
-"use client";
+"use client"
 
-import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Copy, Edit, Check, Save } from "lucide-react";
-import { MultiStepLoader } from "@/components/ui/multi-step-loader";
+import { useState, useEffect, useRef } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { Loader2, Copy, Edit, Check, Save } from "lucide-react"
 
 interface CaptionGeneratorProps {
-  caption: string;
-  editedCaption: string;
-  setEditedCaption: (caption: string) => void;
-  isEditing: boolean;
-  setIsEditing: (isEditing: boolean) => void;
-  saveEditedCaption: () => void;
-  isGenerating: boolean;
-  generationStep: "idle" | "basic" | "advanced" | "hashtags";
-  selectedModel: "basic" | "advanced";
-  setSelectedModel: (model: "basic" | "advanced") => void;
-  tone: string;
-  setTone: (tone: string) => void;
-  customPrompt: string;
-  setCustomPrompt: (prompt: string) => void;
-  onGenerateCaption: (includeHashtags: boolean) => void;
-  imageUploaded: boolean;
+  caption: string
+  editedCaption: string
+  setEditedCaption: (caption: string) => void
+  isEditing: boolean
+  setIsEditing: (isEditing: boolean) => void
+  saveEditedCaption: () => void
+  isGenerating: boolean
+  generationStep: "idle" | "basic" | "advanced" | "hashtags"
+  selectedModel: "basic" | "advanced"
+  setSelectedModel: (model: "basic" | "advanced") => void
+  tone: string
+  setTone: (tone: string) => void
+  customPrompt: string
+  setCustomPrompt: (prompt: string) => void
+  onGenerateCaption: (includeHashtags: boolean) => void
+  imageUploaded: boolean
 }
 
 export default function CaptionGenerator({
@@ -47,13 +46,13 @@ export default function CaptionGenerator({
   onGenerateCaption,
   imageUploaded,
 }: CaptionGeneratorProps) {
-  const [copied, setCopied] = useState(false);
-  const [captionVisible, setCaptionVisible] = useState(false);
-  const [includeHashtags, setIncludeHashtags] = useState(false);
-  const [currentLoadingStep, setCurrentLoadingStep] = useState(0);
-  const [showLongWaitMessage, setShowLongWaitMessage] = useState(false);
-  const loadingTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const longWaitTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [copied, setCopied] = useState(false)
+  const [captionVisible, setCaptionVisible] = useState(false)
+  const [includeHashtags, setIncludeHashtags] = useState(false)
+  const [currentLoadingStep, setCurrentLoadingStep] = useState(0)
+  const [showLongWaitMessage, setShowLongWaitMessage] = useState(false)
+  const loadingTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const longWaitTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Define loading states for each step
   const loadingStates = [
@@ -61,7 +60,7 @@ export default function CaptionGenerator({
     { text: "Identifying key elements..." },
     { text: "Understanding image context..." },
     { text: "Drafting basic caption..." },
-  ];
+  ]
 
   // Add advanced loading states if using advanced mode
   const advancedLoadingStates = [
@@ -70,7 +69,7 @@ export default function CaptionGenerator({
     { text: "Refining caption style..." },
     { text: "Incorporating your custom instructions..." },
     { text: "Polishing final wording..." },
-  ];
+  ]
 
   // Add hashtag states if including hashtags
   const hashtagLoadingStates = [
@@ -78,90 +77,90 @@ export default function CaptionGenerator({
     { text: "Identifying trending topics..." },
     { text: "Generating relevant hashtags..." },
     { text: "Finalizing caption with hashtags..." },
-  ];
+  ]
 
   // Determine which set of loading states to use
-  let currentLoadingStates = loadingStates;
+  let currentLoadingStates = loadingStates
   if (selectedModel === "advanced" && includeHashtags) {
-    currentLoadingStates = hashtagLoadingStates;
+    currentLoadingStates = hashtagLoadingStates
   } else if (selectedModel === "advanced") {
-    currentLoadingStates = advancedLoadingStates;
+    currentLoadingStates = advancedLoadingStates
   } else if (includeHashtags) {
     currentLoadingStates = [
       ...loadingStates,
       { text: "Generating relevant hashtags..." },
       { text: "Finalizing caption with hashtags..." },
-    ];
+    ]
   }
 
   // Update loading states based on generation step
   useEffect(() => {
     // Clean up any existing timers
     if (loadingTimerRef.current) {
-      clearTimeout(loadingTimerRef.current);
+      clearTimeout(loadingTimerRef.current)
     }
     if (longWaitTimerRef.current) {
-      clearTimeout(longWaitTimerRef.current);
+      clearTimeout(longWaitTimerRef.current)
     }
-    
-    setShowLongWaitMessage(false);
-    
+
+    setShowLongWaitMessage(false)
+
     if (isGenerating) {
-      setCurrentLoadingStep(0);
-      
+      setCurrentLoadingStep(0)
+
       // Progress through loading steps
       const progressLoading = () => {
-        setCurrentLoadingStep(prev => {
+        setCurrentLoadingStep((prev) => {
           // Don't exceed the number of loading states
           if (prev < currentLoadingStates.length - 1) {
-            return prev + 1;
+            return prev + 1
           }
-          return prev;
-        });
-      };
-      
+          return prev
+        })
+      }
+
       // Set up step progression timers
-      let stepTime = 2500; // Base time per step
-      
+      const stepTime = 2500 // Base time per step
+
       // Set up the loading steps to progress
       for (let i = 1; i < currentLoadingStates.length; i++) {
         loadingTimerRef.current = setTimeout(() => {
-          progressLoading();
-        }, i * stepTime);
+          progressLoading()
+        }, i * stepTime)
       }
-      
+
       // Set up the "taking longer than expected" message timer
-      const totalExpectedTime = currentLoadingStates.length * stepTime + 5000;
+      const totalExpectedTime = currentLoadingStates.length * stepTime + 5000
       longWaitTimerRef.current = setTimeout(() => {
-        setShowLongWaitMessage(true);
-      }, totalExpectedTime);
+        setShowLongWaitMessage(true)
+      }, totalExpectedTime)
     }
-    
+
     // Clean up function
     return () => {
       if (loadingTimerRef.current) {
-        clearTimeout(loadingTimerRef.current);
+        clearTimeout(loadingTimerRef.current)
       }
       if (longWaitTimerRef.current) {
-        clearTimeout(longWaitTimerRef.current);
+        clearTimeout(longWaitTimerRef.current)
       }
-    };
-  }, [isGenerating, currentLoadingStates.length]);
+    }
+  }, [isGenerating, currentLoadingStates.length])
 
   // Reset animation when caption changes
   useEffect(() => {
-    setCaptionVisible(false);
+    setCaptionVisible(false)
     const timer = setTimeout(() => {
-      setCaptionVisible(true);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [caption]);
+      setCaptionVisible(true)
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [caption])
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(caption);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+    navigator.clipboard.writeText(caption)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   // The caption loading UI component
   const renderLoadingContent = () => {
@@ -174,9 +173,9 @@ export default function CaptionGenerator({
             Taking longer than expected. Please wait...
           </p>
         </>
-      );
+      )
     }
-    
+
     return (
       <>
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -184,11 +183,11 @@ export default function CaptionGenerator({
           {currentLoadingStates[currentLoadingStep]?.text || "Generating your caption..."}
         </p>
       </>
-    );
-  };
-  
+    )
+  }
+
   return (
-    <Card className="w-full h-full flex flex-col dark:bg-gray-800 dark:border-gray-700">
+    <Card className="w-full h-full flex flex-col dark:bg-black dark:border-gray-800">
       <CardContent className="p-6 flex flex-col h-full">
         <div className="space-y-4 flex-1">
           {/* Model Selection */}
@@ -204,11 +203,15 @@ export default function CaptionGenerator({
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="basic" id="basic" />
-                <Label htmlFor="basic" className="dark:text-gray-200">Basic</Label>
+                <Label htmlFor="basic" className="dark:text-gray-200">
+                  Basic
+                </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="advanced" id="advanced" />
-                <Label htmlFor="advanced" className="dark:text-gray-200">Advanced</Label>
+                <Label htmlFor="advanced" className="dark:text-gray-200">
+                  Advanced
+                </Label>
               </div>
             </RadioGroup>
           </div>
@@ -247,7 +250,7 @@ export default function CaptionGenerator({
               value={customPrompt}
               onChange={(e) => setCustomPrompt(e.target.value)}
               disabled={selectedModel === "basic"}
-              className={`resize-none dark:bg-gray-700 dark:text-gray-200 ${selectedModel === "basic" ? "opacity-50" : ""}`}
+              className={`resize-none dark:bg-gray-900 dark:text-gray-200 ${selectedModel === "basic" ? "opacity-50" : ""}`}
             />
           </div>
 
@@ -264,11 +267,15 @@ export default function CaptionGenerator({
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="yes" id="hashtag-yes" />
-                <Label htmlFor="hashtag-yes" className="dark:text-gray-200">Yes</Label>
+                <Label htmlFor="hashtag-yes" className="dark:text-gray-200">
+                  Yes
+                </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="no" id="hashtag-no" />
-                <Label htmlFor="hashtag-no" className="dark:text-gray-200">No</Label>
+                <Label htmlFor="hashtag-no" className="dark:text-gray-200">
+                  No
+                </Label>
               </div>
             </RadioGroup>
           </div>
@@ -306,18 +313,15 @@ export default function CaptionGenerator({
                 </div>
               )}
             </div>
-            <div className="border rounded-md p-3 min-h-[150px] bg-muted/30 dark:bg-gray-700 dark:border-gray-600">
+            <div className="border rounded-md p-3 min-h-[150px] bg-muted/30 dark:bg-gray-900 dark:border-gray-800">
               {isGenerating ? (
                 <div className="flex flex-col items-center justify-center h-full space-y-4">
                   {renderLoadingContent()}
-                  <div className="w-full max-w-xs bg-gray-200 dark:bg-gray-800 rounded-full h-1.5">
-                    <div 
+                  <div className="w-full max-w-xs bg-gray-200 dark:bg-gray-900 rounded-full h-1.5">
+                    <div
                       className="bg-blue-600 h-1.5 rounded-full transition-all duration-500"
-                      style={{ 
-                        width: `${Math.min(
-                          ((currentLoadingStep + 1) / currentLoadingStates.length) * 100,
-                          100
-                        )}%` 
+                      style={{
+                        width: `${Math.min(((currentLoadingStep + 1) / currentLoadingStates.length) * 100, 100)}%`,
                       }}
                     ></div>
                   </div>
@@ -327,24 +331,28 @@ export default function CaptionGenerator({
                   <Textarea
                     value={editedCaption}
                     onChange={(e) => setEditedCaption(e.target.value)}
-                    className="w-full h-full min-h-[100px] border-0 p-0 focus-visible:ring-0 resize-none dark:bg-gray-700 dark:text-gray-200"
+                    className="w-full h-full min-h-[100px] border-0 p-0 focus-visible:ring-0 resize-none dark:bg-gray-900 dark:text-gray-200"
                   />
                 ) : (
-                  <p className={`transition-opacity duration-500 dark:text-gray-200 ${captionVisible ? "opacity-100" : "opacity-0"}`}>
+                  <p
+                    className={`transition-opacity duration-500 dark:text-gray-200 ${captionVisible ? "opacity-100" : "opacity-0"}`}
+                  >
                     {caption}
                   </p>
                 )
               ) : (
-                <p className="text-muted-foreground text-sm dark:text-gray-400">
-                  No caption generated yet.
-                </p>
+                <p className="text-muted-foreground text-sm dark:text-gray-400">No caption generated yet.</p>
               )}
             </div>
           </div>
         </div>
 
         {/* Generate Caption Button */}
-        <Button onClick={() => onGenerateCaption(includeHashtags)} disabled={!imageUploaded || isGenerating} className="mt-4">
+        <Button
+          onClick={() => onGenerateCaption(includeHashtags)}
+          disabled={!imageUploaded || isGenerating}
+          className="mt-4"
+        >
           {isGenerating ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -356,5 +364,6 @@ export default function CaptionGenerator({
         </Button>
       </CardContent>
     </Card>
-  );
+  )
 }
+
