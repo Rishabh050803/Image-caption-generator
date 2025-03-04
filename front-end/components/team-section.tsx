@@ -36,7 +36,7 @@ export default function TeamSection() {
       <h2 className="text-3xl font-bold text-center mb-8 dark:text-white">Our Team</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto px-4">
         {teamMembers.map((member) => (
-          <Card key={member.name} className="dark:bg-gray-800 dark:border-gray-700">
+          <Card key={member.name} className="dark:bg-black dark:border-gray-800">
             <CardContent className="p-6">
               <div className="flex flex-col items-center text-center">
                 <img
