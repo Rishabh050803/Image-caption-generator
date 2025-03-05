@@ -1,0 +1,71 @@
+@startuml Class Diagram
+
+!define LIGHTBLUE
+!includeurl https://raw.githubusercontent.com/Drakemor/RedDress-PlantUML/master/style.puml
+
+skinparam {
+  ClassBackgroundColor<<UI>> #c2e0f2
+  ClassBorderColor<<UI>> #6aacda
+  ClassFontColor<<UI>> #333333
+  
+  ClassBackgroundColor<<Service>> #d0e0d0
+  ClassBorderColor<<Service>> #7ab17a
+  ClassFontColor<<Service>> #333333
+  
+  ClassBackgroundColor<<API>> #ffe0cc
+  ClassBorderColor<<API>> #ffb380
+  ClassFontColor<<API>> #333333
+
+  ArrowColor #3498db
+  ArrowThickness 2
+}
+
+title <font color=#3498db size=20><b>Image Caption Generator Class Structure</b></font>
+
+class ImageUpload <<UI>> {
+  +handleFileChange()
+  +validateImage()
+  +uploadImage()
+}
+
+class CaptionGenerator <<Service>> {
+  -isGenerating: boolean
+  -generationStep: string
+  -selectedModel: string
+  +generateBasicCaption()
+  +generateAdvancedCaption()
+  +generateHashtags()
+}
+
+class APIService <<API>> {
+  +captionWithHFAPI()
+  +refineWithGroq()
+  +generateHashtagsWithGroq()
+}
+
+class UserInterface <<UI>> {
+  -isDarkMode: boolean
+  -caption: string
+  +toggleDarkMode()
+  +handleModelSelection()
+  +handleToneSelection() 
+  +displayCaption()
+  +editCaption()
+}
+
+note right of ImageUpload #aliceblue
+  Handles user image uploads
+  and validates file formats
+end note
+
+note right of APIService #fff3e0
+  Manages connections to 
+  external AI services
+end note
+
+ImageUpload -right[#2980b9]-> CaptionGenerator : <b>sends image</b>
+CaptionGenerator -down[#27ae60]-> APIService : <b>requests processing</b>
+APIService -left[#e67e22]-> CaptionGenerator : <b>returns results</b>
+CaptionGenerator -up[#9b59b6]-> UserInterface : <b>updates display</b>
+
+@enduml

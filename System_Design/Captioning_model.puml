@@ -1,0 +1,113 @@
+@startuml ViT-T5 Architecture
+
+' Direction - standard transformer diagrams are vertical
+top to bottom direction
+
+' Color scheme for transformer diagrams
+skinparam backgroundColor white
+skinparam roundCorner 8
+skinparam componentStyle rectangle
+skinparam handwritten false
+
+' Color palette inspired by classic transformer diagrams
+skinparam component {
+  BackgroundColor<<Encoder>> #D0E0FC
+  BorderColor<<Encoder>> #4A6FE3
+  FontColor<<Encoder>> #333333
+  
+  BackgroundColor<<Decoder>> #D4EDDA
+  BorderColor<<Decoder>> #28A745
+  FontColor<<Decoder>> #333333
+  
+  BackgroundColor<<Input>> #FEE8D6
+  BorderColor<<Input>> #ED8936
+  FontColor<<Input>> #333333
+  
+  BackgroundColor<<Output>> #FBD5D5
+  BorderColor<<Output>> #E53E3E
+  FontColor<<Output>> #333333
+}
+
+' Title using transformer-style naming
+title <font color=#333333 size=18><b>ViT-T5 Transformer Architecture</b></font>
+
+' === LEFT SIDE (Input + ViT) ===
+rectangle "Input" as input {
+  component "Image\n(pixel_values)" as img <<Input>>
+}
+
+rectangle "Vision Transformer Encoder" as vitEncoder {
+  component "ViT Patch Embeddings\nConv2d(3, 768, kernel=(16,16))" as patchEmb <<Encoder>>
+  
+  rectangle "ViT Layers (×12)" as vitLayers <<Encoder>> {
+    component "Self-Attention\n(Q,K,V: 768→768)" as vitAttn <<Encoder>>
+    component "LayerNorm Before" as vitLNBefore <<Encoder>>
+    component "LayerNorm After" as vitLNAfter <<Encoder>>
+    component "Feed Forward\n(768→3072→768)" as vitFF <<Encoder>>
+  }
+  
+  component "ViT Pooler\n(768→768)" as vitPool <<Encoder>>
+}
+
+rectangle "Projection" as projection {
+  component "Linear Layer\n(768→512)" as proj <<Input>>
+}
+
+' === RIGHT SIDE (T5) ===
+rectangle "T5 Decoder" as t5Decoder {
+  component "Embedding\n(32128, 512)" as t5Embed <<Decoder>>
+  
+  rectangle "T5 Decoder Blocks (×6)" as t5Blocks <<Decoder>> {
+    component "Self-Attention\n(Q,K,V: 512→512)" as t5SelfAttn <<Decoder>>
+    component "Cross-Attention\n(Q,K,V: 512→512)" as t5CrossAttn <<Decoder>>
+    component "Feed Forward\n(512→2048→512)" as t5FF <<Decoder>>
+    component "LayerNorm" as t5LN <<Decoder>>
+  }
+  
+  component "Final LayerNorm" as t5FinalLN <<Decoder>>
+}
+
+rectangle "Output" as output {
+  component "Language Model Head\n(512→32128)" as lmHead <<Output>>
+  component "Generated Caption" as caption <<Output>>
+}
+
+' === CONNECTIONS ===
+' Main data flow
+img -[#ED8936]-> patchEmb : "Image Input"
+patchEmb -[#4A6FE3]-> vitLayers : "Patch Features"
+vitLayers -[#4A6FE3]-> vitPool : "Encoded Features"
+vitPool -[#4A6FE3]-> proj : "Pooled Features"
+proj -[#28A745]-> t5Embed : "Projected Features"
+t5Embed -[#28A745]-> t5Blocks : "Embedded Tokens"
+t5Blocks -[#28A745]-> t5FinalLN : "Decoded Features"
+t5FinalLN -[#28A745]-> lmHead : "Normalized Features"
+lmHead -[#E53E3E]-> caption : "Token Probabilities"
+
+' Inside ViT Layer connections (simplified)
+vitLNBefore -[#4A6FE3,dashed]-> vitAttn
+vitAttn -[#4A6FE3,dashed]-> vitFF
+vitFF -[#4A6FE3,dashed]-> vitLNAfter
+
+' Inside T5 Layer connections (simplified)
+t5SelfAttn -[#28A745,dashed]-> t5CrossAttn
+t5CrossAttn -[#28A745,dashed]-> t5FF
+t5FF -[#28A745,dashed]-> t5LN
+
+' Cross-model attention (from ViT to T5)
+vitPool ..[#6A5ACD]> t5CrossAttn : "Cross-Modal Attention"
+
+note bottom of caption
+  <b>Output vocabulary size: 32,128 tokens</b>
+end note
+
+legend right
+  <b>ViT-T5 Architecture Components</b>
+  |= Component |= Function |
+  | <back:#D0E0FC> Vision Transformer </back> | Processes image into visual features |
+  | <back:#D4EDDA> T5 Decoder </back> | Generates text based on visual features |
+  | <b>→</b> | Forward data flow |
+  | <b>⇢</b> | Attention connection |
+endlegend
+
+@enduml
