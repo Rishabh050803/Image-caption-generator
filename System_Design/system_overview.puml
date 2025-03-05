@@ -1,0 +1,95 @@
+@startuml System Overview
+
+skinparam backgroundColor #FEFEFE
+skinparam roundCorner 20
+skinparam componentStyle rectangle
+skinparam handwritten false
+
+skinparam component {
+  BackgroundColor<<Frontend>> #c2e0f2
+  BorderColor<<Frontend>> #6aacda
+  FontColor<<Frontend>> #333333
+  
+  BackgroundColor<<Backend>> #d0e0d0
+  BorderColor<<Backend>> #7ab17a
+  FontColor<<Backend>> #333333
+  
+  BackgroundColor<<Model>> #f5deb3
+  BorderColor<<Model>> #d2b48c
+  FontColor<<Model>> #333333
+  
+  BackgroundColor<<API>> #ffe0cc
+  BorderColor<<API>> #ffb380
+  FontColor<<API>> #333333
+  
+  BackgroundColor<<DB>> #e6ccff
+  BorderColor<<DB>> #c299ff
+  FontColor<<DB>> #333333
+}
+
+skinparam arrow {
+  Color #5D686F
+  FontColor #5D686F
+  FontSize 12
+}
+
+title <font color=#3498db size=18><b>Image Caption Generator System</b></font>
+
+' Define actors with custom colors
+actor "User" as user #3498db
+actor "API Services" as api #e67e22
+
+' Define main components - removed icon references
+rectangle "Frontend (Next.js)" as frontend {
+  component "Image Upload" as upload <<Frontend>>
+  component "Caption Generator UI" as capui <<Frontend>>
+  component "Settings Panel" as settings <<Frontend>>
+  component "Results Display" as display <<Frontend>>
+}
+
+rectangle "Backend (FastAPI)" as backend {
+  component "Image Processing" as imgprocess <<Backend>>
+  component "Caption Service" as capservice <<Backend>>
+  component "Hashtag Service" as hashservice <<Backend>>
+}
+
+rectangle "AI Models" as models {
+  component "Vision Transformer" as vit <<Model>>
+  component "T5-Small Decoder" as t5 <<Model>>
+}
+
+cloud "External APIs" as external {
+  component "Groq API" as groq <<API>>
+  component "HuggingFace Spaces API" as hf <<API>>
+}
+
+database "Storage" as db {
+  component "Generated Captions" as captions <<DB>>
+  component "User Feedback" as feedback <<DB>>
+}
+
+' Define relationships with bold arrows
+user -[#3498db]-> upload : <b>uploads image</b>
+upload -[#16a085]-> imgprocess : <b>sends image data</b>
+imgprocess -[#16a085]-> hf : <b>sends for processing</b>
+hf -[#e74c3c]-> vit : <b>extracts features</b>
+vit -[#e74c3c]-> t5 : <b>generates basic caption</b>
+t5 -[#e74c3c]-> capservice : <b>returns caption</b>
+settings -[#9b59b6]-> capservice : <b>configures options</b>
+capservice -[#9b59b6]-> groq : <b>refines caption/hashtags</b>
+groq -[#e67e22]-> capservice : <b>returns enhanced content</b>
+capservice -[#16a085]-> display : <b>sends final caption</b>
+display -[#3498db]-> user : <b>shows results</b>
+user -[#3498db,dashed]-> feedback : <b>provides ratings</b>
+
+legend right
+  <back:lightgrey>Image Caption Generator</back>
+  |= Component |= Description |
+  | <back:#c2e0f2> Frontend </back> | User interface components |
+  | <back:#d0e0d0> Backend </back> | Server-side processing |
+  | <back:#f5deb3> Models </back> | AI components |
+  | <back:#ffe0cc> APIs </back> | External services |
+  | <back:#e6ccff> Storage </back> | Data persistence |
+endlegend
+
+@enduml

@@ -1,0 +1,96 @@
+@startuml Sequence Diagram
+!theme toy
+
+skinparam backgroundColor #FAFAFA
+skinparam sequence {
+  ArrowColor #2980b9
+  LifeLineBorderColor #3498db
+  LifeLineBackgroundColor #A9DCDF
+  
+  GroupBorderColor #27ae60
+  GroupFontColor #27ae60
+  GroupHeaderFontColor #27ae60
+  
+  DividerBorderColor #f39c12
+  DividerBackgroundColor #fdebd0
+  DividerFontColor #f39c12
+  
+  ParticipantBorderColor #8e44ad
+  ParticipantBackgroundColor #d6b5e5
+  ParticipantFontColor #333333
+  
+  ActorBorderColor #16a085
+  ActorBackgroundColor #aae8d5
+  ActorFontColor #16a085
+}
+
+title <font color=#3498db size=20><b>Image Caption Generator Workflow</b></font>
+
+actor "User" as User #aae8d5
+participant "Frontend" as FE #d5e8f4
+participant "Backend" as BE #d0e0d0
+participant "HuggingFace API" as HF #ffe0cc
+participant "Groq API" as GROQ #ffe0cc
+database "Storage" as DB #e6ccff
+
+== <font color=#e74c3c><b>Image Upload & Basic Caption</b></font> ==
+User -> FE: <font color=#16a085>Upload Image</font>
+activate FE #a9dcdf
+FE -> BE: <font color=#2980b9>POST /upload-image</font>
+activate BE #bef0cb
+BE -> HF: <font color=#e67e22>Request Caption Generation</font>
+activate HF #ffb380
+HF --> BE: <font color=#e67e22>Basic Caption</font>
+deactivate HF
+BE --> FE: <font color=#2980b9>Return Caption</font>
+deactivate BE
+FE --> User: <font color=#16a085>Display Basic Caption</font>
+deactivate FE
+
+== <font color=#e74c3c><b>Advanced Processing (Optional)</b></font> ==
+alt <font color=#3498db>Advanced Mode Selected</font>
+    User -> FE: <font color=#16a085>Select Advanced Options</font>
+    activate FE #a9dcdf
+    FE -> BE: <font color=#2980b9>POST /refine-caption</font>
+    activate BE #bef0cb
+    BE -> GROQ: <font color=#e67e22>Request Caption Refinement</font>
+    activate GROQ #ffb380
+    GROQ --> BE: <font color=#e67e22>Refined Caption</font>
+    deactivate GROQ
+    BE --> FE: <font color=#2980b9>Return Refined Caption</font>
+    deactivate BE
+    FE --> User: <font color=#16a085>Display Refined Caption</font>
+    deactivate FE
+end
+
+== <font color=#e74c3c><b>Hashtag Generation (Optional)</b></font> ==
+alt <font color=#3498db>Hashtags Requested</font>
+    User -> FE: <font color=#16a085>Enable Hashtags</font>
+    activate FE #a9dcdf
+    FE -> BE: <font color=#2980b9>POST /generate-hashtags</font>
+    activate BE #bef0cb
+    BE -> GROQ: <font color=#e67e22>Request Hashtags</font>
+    activate GROQ #ffb380
+    GROQ --> BE: <font color=#e67e22>Generated Hashtags</font>
+    deactivate GROQ
+    BE --> FE: <font color=#2980b9>Return Hashtags</font>
+    deactivate BE
+    FE -> FE: <font color=#9b59b6>Append Hashtags to Caption</font>
+    FE --> User: <font color=#16a085>Display Caption with Hashtags</font>
+    deactivate FE
+end
+
+== <font color=#e74c3c><b>Feedback Collection (Optional)</b></font> ==
+User -> FE: <font color=#16a085>Submit Feedback</font>
+activate FE #a9dcdf
+FE -> BE: <font color=#2980b9>POST /save-feedback</font>
+activate BE #bef0cb
+BE -> DB: <font color=#8e44ad>Store Feedback</font>
+BE --> FE: <font color=#2980b9>Confirmation</font>
+deactivate BE
+FE --> User: <font color=#16a085>Feedback Received</font>
+deactivate FE
+
+footer <font color=#7f8c8d>Generated for Image Caption App Documentation</font>
+
+@enduml
