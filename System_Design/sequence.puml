@@ -33,35 +33,40 @@ participant "HuggingFace API" as HF #ffe0cc
 participant "Groq API" as GROQ #ffe0cc
 database "Storage" as DB #e6ccff
 
-== <font color=#e74c3c><b>Image Upload & Basic Caption</b></font> ==
+== <font color=#e74c3c><b>Image Upload & Caption Generation</b></font> ==
 User -> FE: <font color=#16a085>Upload Image</font>
 activate FE #a9dcdf
 FE -> BE: <font color=#2980b9>POST /upload-image</font>
 activate BE #bef0cb
+
+note right of BE #FFFACD
+  <font color=#e67e22><b>Basic caption generation is always
+  performed first using HuggingFace API,
+  regardless of selected mode</b></font>
+end note
+
 BE -> HF: <font color=#e67e22>Request Caption Generation</font>
 activate HF #ffb380
 HF --> BE: <font color=#e67e22>Basic Caption</font>
 deactivate HF
-BE --> FE: <font color=#2980b9>Return Caption</font>
-deactivate BE
-FE --> User: <font color=#16a085>Display Basic Caption</font>
-deactivate FE
 
-== <font color=#e74c3c><b>Advanced Processing (Optional)</b></font> ==
-alt <font color=#3498db>Advanced Mode Selected</font>
-    User -> FE: <font color=#16a085>Select Advanced Options</font>
-    activate FE #a9dcdf
-    FE -> BE: <font color=#2980b9>POST /refine-caption</font>
-    activate BE #bef0cb
-    BE -> GROQ: <font color=#e67e22>Request Caption Refinement</font>
+alt <font color=#3498db>Basic Mode Selected</font>
+    BE --> FE: <font color=#2980b9>Return Basic Caption</font>
+    FE --> User: <font color=#16a085>Display Basic Caption</font>
+else <font color=#3498db>Advanced Mode Selected</font>
+    BE -> GROQ: <font color=#e67e22>Request Caption Refinement with Basic Caption</font>
     activate GROQ #ffb380
+    note right of GROQ #FFFACD
+      <font color=#e67e22><b>Groq refines the basic caption
+      based on user preferences (tone, style, etc.)</b></font>
+    end note
     GROQ --> BE: <font color=#e67e22>Refined Caption</font>
     deactivate GROQ
     BE --> FE: <font color=#2980b9>Return Refined Caption</font>
-    deactivate BE
     FE --> User: <font color=#16a085>Display Refined Caption</font>
-    deactivate FE
 end
+deactivate BE
+deactivate FE
 
 == <font color=#e74c3c><b>Hashtag Generation (Optional)</b></font> ==
 alt <font color=#3498db>Hashtags Requested</font>

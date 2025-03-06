@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Moon, Sun, Github } from "lucide-react"
 import Link from "next/link"
 import { BackgroundBeams } from "@/components/ui/background-beams"
-
+import { Boxes } from "@/components/ui/background-boxes"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 // Replace this with your actual GitHub repository URL
 const GITHUB_REPO_URL = "https://github.com/Rishabh050803/Image-caption-generator"
 
@@ -137,17 +138,26 @@ export default function Home() {
           <div className="flex justify-between items-center mb-12">
             <h1 className="text-3xl font-bold text-center">Image Caption Generator</h1>
             <div className="flex items-center gap-4">
-              <Link
-                href={GITHUB_REPO_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center"
-              >
-                <Button variant="outline" size="icon" className="rounded-full">
-                  <Github className="h-5 w-5" />
-                  <span className="sr-only">GitHub Repository</span>
-                </Button>
-              </Link>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href={GITHUB_REPO_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center"
+                    >
+                      <Button variant="outline" size="icon" className="rounded-full">
+                        <Github className="h-5 w-5" />
+                        <span className="sr-only">GitHub Repository</span>
+                      </Button>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>See Project Repo</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
                 {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
