@@ -1,50 +1,65 @@
 @startuml System Overview
 
+' PDF page size settings
+scale max 800 width
+scale max 1100 height
+skinparam pageMargin 10
+skinparam pageExternalColor white
+skinparam pageBorderColor white
+
 skinparam backgroundColor #FEFEFE
-skinparam roundCorner 20
+skinparam roundCorner 15
 skinparam componentStyle rectangle
 skinparam handwritten false
 
+' More compact styling
 skinparam component {
   BackgroundColor<<Frontend>> #c2e0f2
   BorderColor<<Frontend>> #6aacda
   FontColor<<Frontend>> #333333
+  BorderThickness 1
   
   BackgroundColor<<Backend>> #d0e0d0
   BorderColor<<Backend>> #7ab17a
   FontColor<<Backend>> #333333
+  BorderThickness 1
   
   BackgroundColor<<Model>> #f5deb3
   BorderColor<<Model>> #d2b48c
   FontColor<<Model>> #333333
+  BorderThickness 1
   
   BackgroundColor<<API>> #ffe0cc
   BorderColor<<API>> #ffb380
   FontColor<<API>> #333333
+  BorderThickness 1
   
   BackgroundColor<<DB>> #e6ccff
   BorderColor<<DB>> #c299ff
   FontColor<<DB>> #333333
+  BorderThickness 1
 }
 
 skinparam arrow {
   Color #5D686F
   FontColor #5D686F
-  FontSize 12
+  FontSize 10
+  Thickness 1
 }
 
-title <font color=#3498db size=18><b>Image Caption Generator System</b></font>
+' Reduce title size slightly
+title <font color=#3498db size=15><b>Image Caption Generator System</b></font>
 
-' Define actors with custom colors
+' Actor placement for better layout
 actor "User" as user #3498db
-actor "API Services" as api #e67e22
+actor "API\nServices" as api #e67e22
 
-' Define main components - removed icon references
+' More compact component organization
 rectangle "Frontend (Next.js)" as frontend {
   component "Image Upload" as upload <<Frontend>>
-  component "Caption Generator UI" as capui <<Frontend>>
-  component "Settings Panel" as settings <<Frontend>>
-  component "Results Display" as display <<Frontend>>
+  component "Caption UI" as capui <<Frontend>>
+  component "Settings" as settings <<Frontend>>
+  component "Results" as display <<Frontend>>
 }
 
 rectangle "Backend (FastAPI)" as backend {
@@ -55,41 +70,42 @@ rectangle "Backend (FastAPI)" as backend {
 
 rectangle "AI Models" as models {
   component "Vision Transformer" as vit <<Model>>
-  component "T5-Small Decoder" as t5 <<Model>>
+  component "T5-Small" as t5 <<Model>>
 }
 
 cloud "External APIs" as external {
   component "Groq API" as groq <<API>>
-  component "HuggingFace Spaces API" as hf <<API>>
+  component "HuggingFace API" as hf <<API>>
 }
 
 database "Storage" as db {
-  component "Generated Captions" as captions <<DB>>
-  component "User Feedback" as feedback <<DB>>
+  component "Captions" as captions <<DB>>
+  component "Feedback" as feedback <<DB>>
 }
 
-' Define relationships with bold arrows
-user -[#3498db]-> upload : <b>uploads image</b>
-upload -[#16a085]-> imgprocess : <b>sends image data</b>
-imgprocess -[#16a085]-> hf : <b>sends for processing</b>
-hf -[#e74c3c]-> vit : <b>extracts features</b>
-vit -[#e74c3c]-> t5 : <b>generates basic caption</b>
-t5 -[#e74c3c]-> capservice : <b>returns caption</b>
-settings -[#9b59b6]-> capservice : <b>configures options</b>
-capservice -[#9b59b6]-> groq : <b>refines caption/hashtags</b>
-groq -[#e67e22]-> capservice : <b>returns enhanced content</b>
-capservice -[#16a085]-> display : <b>sends final caption</b>
-display -[#3498db]-> user : <b>shows results</b>
-user -[#3498db,dashed]-> feedback : <b>provides ratings</b>
+' Relationships with smaller font
+user -[#3498db]-> upload : <font size=9><b>uploads image</b></font>
+upload -[#16a085]-> imgprocess : <font size=9><b>image data</b></font>
+imgprocess -[#16a085]-> hf : <font size=9><b>processing</b></font>
+hf -[#e74c3c]-> vit : <font size=9><b>features</b></font>
+vit -[#e74c3c]-> t5 : <font size=9><b>basic caption</b></font>
+t5 -[#e74c3c]-> capservice : <font size=9><b>caption</b></font>
+settings -[#9b59b6]-> capservice : <font size=9><b>options</b></font>
+capservice -[#9b59b6]-> groq : <font size=9><b>refinement</b></font>
+groq -[#e67e22]-> capservice : <font size=9><b>enhanced</b></font>
+capservice -[#16a085]-> display : <font size=9><b>final caption</b></font>
+display -[#3498db]-> user : <font size=9><b>results</b></font>
+user -[#3498db,dashed]-> feedback : <font size=9><b>ratings</b></font>
 
+' Compact legend
 legend right
-  <back:lightgrey>Image Caption Generator</back>
-  |= Component |= Description |
-  | <back:#c2e0f2> Frontend </back> | User interface components |
-  | <back:#d0e0d0> Backend </back> | Server-side processing |
-  | <back:#f5deb3> Models </back> | AI components |
-  | <back:#ffe0cc> APIs </back> | External services |
-  | <back:#e6ccff> Storage </back> | Data persistence |
+  <back:lightgrey><font size=10>Image Caption Generator</font></back>
+  |= <font size=9>Component</font> |= <font size=9>Description</font> |
+  | <back:#c2e0f2><font size=9> Frontend </font></back> | <font size=9>UI components</font> |
+  | <back:#d0e0d0><font size=9> Backend </font></back> | <font size=9>Processing</font> |
+  | <back:#f5deb3><font size=9> Models </font></back> | <font size=9>AI components</font> |
+  | <back:#ffe0cc><font size=9> APIs </font></back> | <font size=9>External services</font> |
+  | <back:#e6ccff><font size=9> Storage </font></back> | <font size=9>Data persistence</font> |
 endlegend
 
 @enduml
