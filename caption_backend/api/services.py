@@ -8,17 +8,18 @@ from groq import Groq
 from dotenv import load_dotenv
 
 
-# Get the absolute path of the parent directory
-parent_dir = os.path.abspath("/home/rishabh/coding/minor_project/Image-caption-app/")
+# # Get the absolute path of the parent directory
+# parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
-# Construct the full path to the .env file
-dotenv_path = os.path.join(parent_dir, ".env")
+# # Construct the full path to the .env file
+# dotenv_path = os.path.join(parent_dir, ".env")
 
-# Load the .env file
-load_dotenv(dotenv_path=dotenv_path)
+# # Load the .env file
+# load_dotenv(dotenv_path=dotenv_path)
 
 # Get the API key
-api_key = os.getenv("API_KEY")
+# api_key = os.getenv("API_KEY")
+api_key = "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"
 
 # Constants (use environment variables for production)
 HF_API_URL = "https://rishabh2234-image-captionator.hf.space/generate_caption/"

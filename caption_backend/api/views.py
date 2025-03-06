@@ -1,5 +1,5 @@
-# api/views.py
 import os
+import tempfile
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.response import Response
@@ -13,12 +13,23 @@ def generate_caption(request):
         return Response({"error": "No file provided."}, status=400)
 
     file_obj = request.FILES["file"]
-    temp_path = os.path.join("/tmp", file_obj.name)
-    with open(temp_path, "wb") as temp_file:
-        for chunk in file_obj.chunks():
-            temp_file.write(chunk)
-    caption = caption_with_hf_api(temp_path)
-    os.remove(temp_path)  # Clean up the temporary file
+    temp_dir = tempfile.gettempdir()  # Get the appropriate temp directory for the current OS
+    temp_path = os.path.join(temp_dir, file_obj.name)
+    
+    try:
+        # Write the uploaded file to the temporary file
+        with open(temp_path, "wb") as temp_file:
+            for chunk in file_obj.chunks():
+                temp_file.write(chunk)
+        # Process the file using your service function
+        caption = caption_with_hf_api(temp_path)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+    finally:
+        # Always clean up the temporary file if it exists
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+    
     return Response({"caption": caption})
 
 @api_view(["POST"])
@@ -36,3 +47,4 @@ def get_hashtags(request):
     caption = request.data.get("caption", "")
     hashtags = generate_hashtags(caption)
     return Response({"hashtags": hashtags})
+
