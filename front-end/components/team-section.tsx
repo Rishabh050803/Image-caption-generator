@@ -11,19 +11,19 @@ interface TeamMember {
 
 const teamMembers: TeamMember[] = [
   {
-    name: "John Doe",
+    name: "Rishabh K. Patel",
     role: "Lead Developer",
-    github: "https://github.com/johndoe",
-    avatar: "/placeholder.svg?height=100&width=100",
+    github: "https://github.com/Rishabh050803",
+    avatar: "/rkp.png?height=100&width=100",
   },
   {
-    name: "Jane Smith",
+    name: "Divyansh Pokharna",
     role: "ML Engineer",
     github: "https://github.com/janesmith",
     avatar: "/placeholder.svg?height=100&width=100",
   },
   {
-    name: "Alex Johnson",
+    name: "Dhruv Parashar",
     role: "UI/UX Designer",
     github: "https://github.com/alexjohnson",
     avatar: "/placeholder.svg?height=100&width=100",
