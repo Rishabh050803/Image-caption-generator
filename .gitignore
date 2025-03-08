@@ -3,4 +3,4 @@
 .DS_Store
 # Ignore dependencies
 front-end/node_modules/
-.env
+.env__pycache__/
