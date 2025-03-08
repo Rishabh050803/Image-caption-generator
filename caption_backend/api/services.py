@@ -22,7 +22,8 @@ api_key = os.getenv("API_KEY")
 
 # Constants (use environment variables for production)
 HF_API_URL = "https://rishabh2234-image-captionator.hf.space/generate_caption/"
-GROQ_API_KEY = api_key
+# GROQ_API_KEY = api_key
+GROQ_API_KEY = "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" 
 HF_TIMEOUT = 60  # Timeout for caption generation in seconds
 GROQ_TIMEOUT = 25  # Timeout for Groq API calls in seconds
 
