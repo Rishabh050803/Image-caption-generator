@@ -35,10 +35,22 @@ def generate_caption(request):
 @api_view(["POST"])
 @parser_classes([JSONParser])
 def refine_caption(request):
+    # Get the caption from the request
     caption = request.data.get("caption", "")
+    print(f"REFINE ENDPOINT RECEIVED CAPTION: '{caption}'")
+    
+    # Basic validation
+    if not caption or len(caption.strip()) < 3 or caption.lower() == "error":
+        print("REFINE ENDPOINT RECEIVED INVALID CAPTION")
+        return Response({"refined_caption": "No valid caption provided for refinement"})
+        
     tone = request.data.get("tone", "formal")
     additional_info = request.data.get("additional_info", "")
+    
+    print(f"REFINE ENDPOINT CALLING SERVICE WITH CAPTION: '{caption}'")
     refined_caption = refine_caption_with_groq(caption, tone, additional_info)
+    print(f"REFINE ENDPOINT RETURNING: '{refined_caption}'")
+    
     return Response({"refined_caption": refined_caption})
 
 @api_view(["POST"])
