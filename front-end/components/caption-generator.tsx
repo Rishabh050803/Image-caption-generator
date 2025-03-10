@@ -8,6 +8,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2, Copy, Edit, Check, Save } from "lucide-react"
+import CaptionRating from "@/components/caption-rating";
+import { submitRating } from "@/lib/rating-service";
 
 interface CaptionGeneratorProps {
   caption: string
@@ -25,6 +27,8 @@ interface CaptionGeneratorProps {
   customPrompt: string
   setCustomPrompt: (prompt: string) => void
   onGenerateCaption: (includeHashtags: boolean) => void
+  uploadedImage?: string
+  setUploadedImage?: (image: string) => void
   imageUploaded: boolean
 }
 
@@ -44,6 +48,8 @@ export default function CaptionGenerator({
   customPrompt,
   setCustomPrompt,
   onGenerateCaption,
+  uploadedImage,
+  setUploadedImage,
   imageUploaded,
 }: CaptionGeneratorProps) {
   const [copied, setCopied] = useState(false)
@@ -161,6 +167,140 @@ export default function CaptionGenerator({
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+
+
+// Replace the handleRatingSubmit function with this corrected version
+
+const handleRatingSubmit = async (rating: number, feedback: string) => {
+  try {
+    console.log("Starting rating submission");
+    
+    // Extract hashtags and main caption part separately
+    let captionText = caption;
+    let hashtagsPart = "";
+    
+    if (includeHashtags) {
+      // Better hashtag extraction
+      const parts = caption.split('\n');
+      
+      // Filter out empty lines and collect hashtag lines
+      const contentLines = [];
+      const hashtagLines = [];
+      
+      for (const line of parts) {
+        if (line.trim().startsWith('#')) {
+          hashtagLines.push(line.trim());
+        } else if (line.trim()) {
+          contentLines.push(line);
+        }
+      }
+      
+      // Join the content lines to get clean caption
+      captionText = contentLines.join('\n').trim();
+      
+      // Join the hashtag lines to get hashtags part
+      // Only use the LAST hashtag line to avoid duplicates
+      if (hashtagLines.length > 0) {
+        hashtagsPart = hashtagLines[hashtagLines.length - 1];
+      }
+    }
+    
+    // Determine which caption type we have
+    const captionData: {
+      caption_basic?: string;
+      caption_refined?: string;
+      caption_hashtags?: string;
+    } = {};
+    
+    // Always store the basic or refined caption
+    if (selectedModel === "basic") {
+      captionData.caption_basic = captionText;
+      console.log("Setting caption_basic to:", captionText);
+    } else if (selectedModel === "advanced") {
+      captionData.caption_refined = captionText;
+      console.log("Setting caption_refined to:", captionText);
+    }
+    
+    // Store hashtags separately if they exist
+    if (hashtagsPart) {
+      captionData.caption_hashtags = hashtagsPart;
+      console.log("Setting caption_hashtags to:", hashtagsPart);
+    }
+    
+    // NEW APPROACH: Get image from DOM directly
+    // This is a simpler approach that might work better
+    const imageElement = document.querySelector(".uploaded-image") as HTMLImageElement;
+    
+    if (imageElement && imageElement.src) {
+      try {
+        // For testing purposes, create a canvas and export as blob
+        const canvas = document.createElement("canvas");
+        canvas.width = imageElement.naturalWidth;
+        canvas.height = imageElement.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        
+        if (ctx) {
+          ctx.drawImage(imageElement, 0, 0);
+          
+          // Get as blob and create file
+          canvas.toBlob(async (blob) => {
+            if (blob) {
+              // Create file from blob
+              const file = new File([blob], "image.jpg", { type: "image/jpeg" });
+              console.log("Created file from canvas:", file.name, file.size);
+              
+              // Submit with the file
+              await submitRating({
+                caption_basic: captionData.caption_basic,
+                caption_refined: captionData.caption_refined,
+                caption_hashtags: captionData.caption_hashtags,
+                image: file,
+                rating,
+                feedback: feedback || undefined,
+              });
+            } else {
+              console.error("Failed to create blob from canvas");
+              // Submit without image
+              await submitRating({
+                caption_basic: captionData.caption_basic,
+                caption_refined: captionData.caption_refined,
+                caption_hashtags: captionData.caption_hashtags,
+                rating,
+                feedback: feedback || undefined,
+              });
+            }
+          }, "image/jpeg");
+        } else {
+          console.error("Failed to get canvas context");
+          throw new Error("Canvas context not available");
+        }
+        
+      } catch (error) {
+        console.error("Error creating file from image:", error);
+        // Submit without image on error
+        await submitRating({
+          caption_basic: captionData.caption_basic,
+          caption_refined: captionData.caption_refined,
+          caption_hashtags: captionData.caption_hashtags,
+          rating,
+          feedback: feedback || undefined,
+        });
+      }
+    } else {
+      // No image element found - submit without image
+      console.log("No image element found - submitting without image");
+      await submitRating({
+        caption_basic: captionData.caption_basic,
+        caption_refined: captionData.caption_refined,
+        caption_hashtags: captionData.caption_hashtags,
+        rating,
+        feedback: feedback || undefined,
+      });
+    }
+  } catch (error) {
+    console.error("Error in rating submission:", error);
+  }
+};
 
   // The caption loading UI component
   const renderLoadingContent = () => {
@@ -344,6 +484,17 @@ export default function CaptionGenerator({
                 <p className="text-muted-foreground text-sm dark:text-gray-400">No caption generated yet.</p>
               )}
             </div>
+            {caption && !isGenerating && !isEditing && (
+              <div className="mt-4">
+                <CaptionRating 
+                  captionBasic={selectedModel === "basic" ? caption : undefined}
+                  captionRefined={selectedModel === "advanced" ? caption : undefined}
+                  captionHashtags={includeHashtags && caption.includes('#') ? caption : undefined}
+                  imageDataUrl={uploadedImage}
+                  onRatingSubmit={handleRatingSubmit} 
+                />
+              </div>
+            )}
           </div>
         </div>
 

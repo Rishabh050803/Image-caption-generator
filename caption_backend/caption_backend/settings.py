@@ -10,11 +10,45 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
+import sys
 from pathlib import Path
+
+# Add this class at the top of your settings.py file
+
+class DebugMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        # Log request details
+        if request.path.startswith('/api/ratings/') and request.method == 'POST':
+            print("\n----------------------")
+            print("DEBUG: Rating submission")
+            print(f"Content-Type: {request.headers.get('Content-Type', 'None')}")
+            print(f"FILES: {request.FILES}")
+            print(f"POST: {request.POST}")
+            # Don't try to access request.body as it may have been consumed
+            print("----------------------\n")
+        
+        response = self.get_response(request)
+        return response
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Media files configuration
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Create required directories
+os.makedirs(MEDIA_ROOT, exist_ok=True)
+os.makedirs(os.path.join(MEDIA_ROOT, 'caption_images'), exist_ok=True)
+
+# Print directory information for debugging
+print(f"Media directory set to: {MEDIA_ROOT}")
+print(f"Media directory exists: {os.path.exists(MEDIA_ROOT)}")
+print(f"Media directory is writable: {os.access(MEDIA_ROOT, os.W_OK)}")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -43,6 +77,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'caption_backend.settings.DebugMiddleware',  # Add this line
     "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -131,5 +166,28 @@ CORS_ALLOWED_ORIGINS = [
     
 ]
 CORS_ALLOW_ALL_ORIGINS = True
+
+# Media files (uploaded images)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Add these settings and debug code
+
+# Create media directories with debug output
+try:
+    os.makedirs(MEDIA_ROOT, exist_ok=True)
+    os.makedirs(os.path.join(MEDIA_ROOT, 'caption_images'), exist_ok=True)
+    print(f"Media directories created/verified at {MEDIA_ROOT}")
+    
+    # Test write permissions
+    test_file_path = os.path.join(MEDIA_ROOT, 'test_permissions.txt')
+    with open(test_file_path, 'w') as f:
+        f.write('test')
+    os.remove(test_file_path)
+    print("Media directory is writable")
+except Exception as e:
+    print(f"ERROR setting up media directories: {e}")
+    # Print full directory with permissions
+    os.system(f"ls -la {BASE_DIR}")
 
 
