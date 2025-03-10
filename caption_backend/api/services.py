@@ -75,9 +75,16 @@ def call_groq_api_with_timeout(prompt: str) -> dict:
             )
             response_text = completion.choices[0].message.content.strip()
             try:
+                # Try to parse as JSON first
                 result = json.loads(response_text)
             except json.JSONDecodeError:
-                result = {"error": "Invalid JSON response from Groq. Raw response: " + response_text}
+                # If not valid JSON, check if it's a plain text response
+                if "refined_caption" not in response_text.lower():
+                    # If not a proper response format, create a manual JSON object
+                    result = {"refined_caption": response_text}
+                else:
+                    # It might contain the refined caption text but not in proper JSON
+                    result = {"error": "Invalid JSON response from Groq. Raw response: " + response_text}
         except Exception as e:
             result = {"error": f"API request failed: {str(e)}"}
     
@@ -92,18 +99,59 @@ def call_groq_api_with_timeout(prompt: str) -> dict:
     return result
 
 def refine_caption_with_groq(caption: str, tone: str, additional_info: str) -> str:
+    # Stricter validation for caption input
+    if not caption or caption.strip() == "" or caption.lower() == "error" or "failed" in caption.lower() or caption.lower().startswith("caption"):
+        print(f"Invalid caption detected: '{caption}'")
+        return "Unable to refine caption. Please try again with a different image."
+    
+    # Ensure tone and additional info are valid
+    tone = tone if tone and tone.strip() else "casual"
+    additional_info = additional_info if additional_info and additional_info.strip() else "Make it engaging"
+    
+    print(f"Refining valid caption: '{caption}' with tone: '{tone}'")
+    
+    # Updated prompt for medium-length captions (20-50 words)
     prompt = (
-        f"Convert this caption into a '{tone}' tone: {caption}. "
-        f"Also include this additional information: {additional_info}. "
-        f"Make it short, engaging, and a one-liner. "
-        f"Return ONLY in JSON format as:\n"
-        f'{{"refined_caption": "your refined caption here"}}'
+        f"You are a social media caption expert. Take this basic image caption: '{caption}' "
+        f"and transform it into a {tone} tone caption. "
+        f"Consider this additional context: {additional_info}. "
+        f"Create an engaging caption that is between 20-50 words long - perfect for social media. "
+        f"The caption should be descriptive and detailed while maintaining an engaging style. "
+        f"Return ONLY in this JSON format without explanation:\n"
+        f'{{"refined_caption": "YOUR_CAPTION_HERE"}}'
     )
-    print("requesting groq for refining caption")
-    response = call_groq_api_with_timeout(prompt)
-    print(f"Refined Caption - {response.get('refined_caption', response.get('error', 'Unknown error'))}")
-
-    return response.get("refined_caption", response.get("error", "Unknown error"))
+    
+    try:
+        response = call_groq_api_with_timeout(prompt)
+        
+        # Debug the raw response
+        print(f"Raw API response: {response}")
+        
+        # Check for error
+        if "error" in response:
+            error_msg = response.get("error")
+            print(f"Error refining caption: {error_msg}")
+            # Return the original caption rather than error message
+            return caption
+        
+        refined = response.get("refined_caption")
+        if not refined or "error" in refined.lower() or "fail" in refined.lower():
+            print(f"Invalid refined caption detected: '{refined}', using original")
+            return caption
+            
+        # Check word count to ensure it's in the desired range
+        word_count = len(refined.split())
+        print(f"Refined caption word count: {word_count}")
+        
+        if word_count < 15 or word_count > 60:  # Using wider bounds for validation to be safe
+            print(f"Caption length outside desired range ({word_count} words), using original")
+            return caption
+        
+        print(f"Successfully refined caption: '{refined}'")
+        return refined
+    except Exception as e:
+        print(f"Exception during refinement: {str(e)}")
+        return caption
 
 def generate_hashtags(caption: str) -> list:
     prompt = (
