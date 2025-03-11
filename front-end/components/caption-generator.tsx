@@ -353,7 +353,7 @@ export default function CaptionGenerator({
               {caption && !isEditing && !isGenerating && (
                 <CaptionRating
                   image={imageUploaded ? uploadedImage : ""}
-                  caption={caption}
+                  caption={basicCaption}
                   tone={tone}
                   customPrompt={customPrompt}
                   hashtags={generatedHashtags}  // Use includeHashtags instead of containsHashtags

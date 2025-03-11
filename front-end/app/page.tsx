@@ -64,16 +64,15 @@ export default function Home() {
   }
 
   const handleGenerateCaption = async (containHashtags: boolean) => {
-    // Existing code...
     if (!uploadedImage) return
-
+  
     setIsGenerating(true)
     setIsEditing(false)
     setGenerationStep("basic")
-
+  
     try {
-      // 1) Basic caption
-      let generatedCaption = await generateBasicCaption({
+      // 1) Generate the basic caption and store it separately
+      const basicCaptionResult = await generateBasicCaption({
         image: uploadedImage,
         model: selectedModel,
         tone: selectedModel === "advanced" ? tone : "formal",
@@ -81,12 +80,13 @@ export default function Home() {
         containHashtags,
         prevCaption: caption,
       })
-      setBasicCaption(basicCaption)
-
-      // 2) Advanced refinement (if "advanced" selected)
+      setBasicCaption(basicCaptionResult)
+      let finalCaption = basicCaptionResult
+  
+      // 2) If advanced mode is selected, generate a refined caption
       if (selectedModel === "advanced") {
         setGenerationStep("advanced")
-        const refinedCaption = await generateAdvancedCaption({
+        const refinedCaptionResult = await generateAdvancedCaption({
           image: uploadedImage,
           model: selectedModel,
           tone,
@@ -94,29 +94,30 @@ export default function Home() {
           containHashtags,
           prevCaption: caption,
         })
-        if (refinedCaption !== "error") {
-          generatedCaption = refinedCaption
+        if (refinedCaptionResult !== "error") {
+          finalCaption = refinedCaptionResult
         } else {
           console.log("Error in refining caption")
         }
       }
-
-      // 3) Hashtags
+  
+      // 3) Generate hashtags if required
       if (containHashtags) {
         setGenerationStep("hashtags")
-        let tags = await generateHashtags(generatedCaption)
+        let tags = await generateHashtags(finalCaption)
         if (tags.length > 0) {
           // Limit to 5 for brevity
           tags = tags.slice(0, 5)
-          generatedCaption += "\n\n" + tags.join(" ")
+          finalCaption += "\n\n" + tags.join(" ")
           setGeneratedHashtags(tags.join(","))
         } else {
           console.log("Error in generating hashtags")
         }
       }
-
-      setCaption(generatedCaption)
-      setEditedCaption(generatedCaption)
+  
+      // Save the final caption (refined if applicable) and set edited caption
+      setCaption(finalCaption)
+      setEditedCaption(finalCaption)
     } catch (error) {
       console.error("Error generating caption:", error)
     } finally {
@@ -124,6 +125,9 @@ export default function Home() {
       setGenerationStep("idle")
     }
   }
+  
+
+
 
   const saveEditedCaption = () => {
     setCaption(editedCaption)
