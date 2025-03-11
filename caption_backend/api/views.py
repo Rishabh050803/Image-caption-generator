@@ -1,8 +1,14 @@
 import os
 import tempfile
-from rest_framework.decorators import api_view, parser_classes
+from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.parsers import MultiPartParser, JSONParser
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+# import redirect from 
+
+from django.shortcuts import redirect
+from django.middleware.csrf import get_token
+from django.http import JsonResponse
 from .services import caption_with_hf_api, refine_caption_with_groq, generate_hashtags
 
 @api_view(["POST"])
@@ -60,3 +66,105 @@ def get_hashtags(request):
     hashtags = generate_hashtags(caption)
     return Response({"hashtags": hashtags})
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def csrf_token(request):
+    return JsonResponse({'csrfToken': get_token(request)})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_profile(request):
+    """Return the current user's profile information"""
+    user = request.user
+    return Response({
+        'id': user.id,
+        'email': user.email,
+        'username': getattr(user, 'username', user.email),
+        'isAuthenticated': True
+    })
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def auth_status(request):
+    """Check if user is authenticated"""
+    if request.user.is_authenticated:
+        return Response({
+            'isAuthenticated': True,
+            'user': {
+                'id': request.user.id,
+                'email': request.user.email,
+                'username': getattr(request.user, 'username', request.user.email),
+            }
+        })
+    return Response({'isAuthenticated': False})
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def debug_social_auth(request):
+    """Debug view to check social auth configuration"""
+    from allauth.socialaccount.models import SocialApp
+    from django.contrib.sites.models import Site
+    
+    try:
+        sites = list(Site.objects.all().values())
+        social_apps = list(SocialApp.objects.all().values('id', 'provider', 'name', 'client_id'))
+        
+        # Get site associations for each app
+        app_sites = {}
+        for app in SocialApp.objects.all():
+            app_sites[app.id] = list(app.sites.all().values_list('domain', flat=True))
+        
+        return Response({
+            'sites': sites,
+            'social_apps': social_apps,
+            'app_sites': app_sites,
+            'current_site_id': settings.SITE_ID
+        })
+    except Exception as e:
+        return Response({'error': str(e)})
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_csrf_token(request):
+    """Return the CSRF token for cross-domain requests."""
+    return JsonResponse({'csrfToken': get_token(request)})
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def social_auth_redirect(request):
+    """Redirect user to frontend after social authentication"""
+    frontend_url = getattr(settings, 'LOGIN_REDIRECT_URL', 'http://localhost:3000/auth/success')
+    return redirect(frontend_url)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def debug_register(request):
+    """Debug endpoint to log registration data and errors"""
+    import logging
+    from dj_rest_auth.registration.serializers import RegisterSerializer
+    from caption_backend.serializers import CustomRegisterSerializer
+    
+    logger = logging.getLogger('django.request')
+    
+    try:
+        data = request.data.copy()
+        debug_data = data.copy()
+        
+        # Redact sensitive fields for logging
+        if 'password1' in debug_data:
+            debug_data['password1'] = '***'
+        if 'password2' in debug_data:
+            debug_data['password2'] = '***'
+            
+        logger.info(f"Registration data received: {debug_data}")
+        
+        # Try to validate with the custom serializer
+        serializer = CustomRegisterSerializer(data=data)
+        if not serializer.is_valid():
+            logger.error(f"Registration validation errors: {serializer.errors}")
+            return Response({"errors": serializer.errors}, status=400)
+            
+        return Response({"message": "Data would be valid"})
+    except Exception as e:
+        logger.error(f"Error in debug_register: {e}")
+        return Response({"error": str(e)})
