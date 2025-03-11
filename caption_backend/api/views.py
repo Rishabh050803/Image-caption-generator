@@ -168,3 +168,30 @@ def debug_register(request):
     except Exception as e:
         logger.error(f"Error in debug_register: {e}")
         return Response({"error": str(e)})
+
+@api_view(['POST', 'GET'])  # Allow both POST and GET for easier debugging
+@permission_classes([AllowAny])  # Allow anyone to logout
+def custom_logout(request):
+    """Custom logout view that handles CSRF and cookie clearing"""
+    from django.contrib.auth import logout
+    from rest_framework.response import Response
+    from django.conf import settings
+    import logging
+    
+    logger = logging.getLogger('django.request')
+    logger.info("Logout attempt received")
+    
+    # Perform server-side logout
+    logout(request)
+    
+    # Create response
+    response = Response({"detail": "Logout successful"})
+    
+    # Clear auth cookies
+    response.delete_cookie(settings.JWT_AUTH_COOKIE)
+    response.delete_cookie(settings.JWT_AUTH_REFRESH_COOKIE)
+    response.delete_cookie('csrftoken')
+    response.delete_cookie('sessionid')
+    
+    logger.info("User logged out, cookies cleared")
+    return response

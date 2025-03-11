@@ -15,4 +15,5 @@ urlpatterns = [
     path('debug/social-auth/', views.debug_social_auth, name='debug_social_auth'),
     # In your api/urls.py file
     path('debug/register/', views.debug_register, name='debug_register'),   
+    path('auth/logout/', views.custom_logout, name='api_logout'),
     ]

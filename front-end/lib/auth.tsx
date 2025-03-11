@@ -128,24 +128,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
   
   const logout = async (): Promise<void> => {
-    setState({ ...state, isLoading: true })
+    setState({ ...state, isLoading: true, error: null });
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/logout/`, {
-        method: 'POST',
-        credentials: 'include'
-      })
-    } catch (error) {
-      console.error('Logout error:', error)
-    } finally {
+      // First, get a CSRF token
+      const csrfResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/csrf-token/`, 
+        { credentials: 'include' }
+      );
+      
+      const { csrfToken } = await csrfResponse.json();
+      
+      // Call our custom logout endpoint instead of the default one
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/logout/`, 
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          credentials: 'include'
+        }
+      );
+      
+      // Clear all stored auth state
       setState({
         user: null,
         isAuthenticated: false,
         isLoading: false,
         error: null
-      })
-      router.push('/login')
+      });
+      
+      // Remove any local storage items
+      localStorage.removeItem('authUser');
+      
+      // Force redirect to login page
+      window.location.href = '/login';
+      
+    } catch (error) {
+      console.error("Logout error:", error);
+      
+      // Even if the server request fails, clear the client-side auth state
+      setState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: "Logout failed, but session cleared locally"
+      });
+      
+      // Still redirect to login
+      window.location.href = '/login';
     }
-  }
+  };
   
   const loginWithGoogle = () => {
     window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/accounts/google/login/`
