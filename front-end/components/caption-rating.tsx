@@ -89,7 +89,7 @@ export default function CaptionRating({
             rating,
             tone: tone || null,
             custom_instruction: customPrompt || null,
-            hashtags: hashtags ? "true" : null,
+            hashtags: hashtags || null,
             refined_caption: refinedCaption || null
           }),
           credentials: 'include'
