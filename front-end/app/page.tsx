@@ -11,6 +11,9 @@ import Link from "next/link"
 import { BackgroundBeams } from "@/components/ui/background-beams"
 import { Boxes } from "@/components/ui/background-boxes"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import ProtectedRoute from "@/components/protected-route"
+import { LogoutButton } from "@/components/logout-button"
+
 // Replace this with your actual GitHub repository URL
 const GITHUB_REPO_URL = "https://github.com/Rishabh050803/Image-caption-generator"
 
@@ -124,84 +127,99 @@ export default function Home() {
   }
 
   return (
-    <div className={`min-h-screen transition-colors relative ${isDarkMode ? "dark bg-black text-white" : "bg-white"}`}>
-      {/* Unified background for the entire page */}
-      <div className="absolute inset-0 w-full h-full overflow-hidden">
-        <BackgroundBeams className="h-full w-full" />
-      </div>
+    <ProtectedRoute>
+      <div className={`min-h-screen transition-colors relative ${isDarkMode ? "dark bg-black text-white" : "bg-white"}`}>
+        {/* Unified background for the entire page */}
+        <div className="absolute inset-0 w-full h-full overflow-hidden">
+          <BackgroundBeams className="h-full w-full" />
+        </div>
 
-      {/* All content container */}
-      <div className="relative z-10">
-        {/* Main section (image upload and caption generator) */}
-        <div className="container mx-auto py-12 px-4">
-          {/* Header with Title + Buttons */}
-          <div className="flex justify-between items-center mb-12">
-            <h1 className="text-3xl font-bold text-center">Image Caption Generator</h1>
-            <div className="flex items-center gap-4">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link
-                      href={GITHUB_REPO_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center"
-                    >
-                      <Button variant="outline" size="icon" className="rounded-full">
-                        <Github className="h-5 w-5" />
-                        <span className="sr-only">GitHub Repository</span>
-                      </Button>
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>See Project Repo</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
-                {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </Button>
+        {/* All content container */}
+        <div className="relative z-10">
+          {/* Main section (image upload and caption generator) */}
+          <div className="container mx-auto py-12 px-4">
+            {/* Header with Title + Buttons */}
+            <div className="flex justify-between items-center mb-12">
+              <h1 className="text-3xl font-bold text-center">Image Caption Generator</h1>
+              <div className="flex items-center gap-4">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link
+                        href={GITHUB_REPO_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center"
+                      >
+                        <Button variant="outline" size="icon" className="rounded-full">
+                          <Github className="h-5 w-5" />
+                          <span className="sr-only">GitHub Repository</span>
+                        </Button>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>See Project Repo</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
+                  {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                </Button>
+                
+                {/* Add the Logout button here */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <LogoutButton />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Logout</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
-          </div>
 
-          {/* Main Grid: Left=Image Upload, Right=Caption */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
-            <div className="flex flex-col">
-              <h2 className="text-xl font-semibold mb-4">Image Upload</h2>
-              <ImageUpload onImageUpload={handleImageUpload} uploadedImage={uploadedImage} />
+            {/* Main Grid: Left=Image Upload, Right=Caption */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
+              <div className="flex flex-col">
+                <h2 className="text-xl font-semibold mb-4">Image Upload</h2>
+                <ImageUpload onImageUpload={handleImageUpload} uploadedImage={uploadedImage} />
+              </div>
+
+              <div className="flex flex-col">
+                <h2 className="text-xl font-semibold mb-4">Caption Generator</h2>
+                <CaptionGenerator
+                  caption={caption}
+                  editedCaption={editedCaption}
+                  setEditedCaption={setEditedCaption}
+                  isEditing={isEditing}
+                  setIsEditing={setIsEditing}
+                  saveEditedCaption={saveEditedCaption}
+                  isGenerating={isGenerating}
+                  generationStep={generationStep}
+                  selectedModel={selectedModel}
+                  setSelectedModel={setSelectedModel}
+                  tone={tone}
+                  setTone={setTone}
+                  customPrompt={customPrompt}
+                  setCustomPrompt={setCustomPrompt}
+                  onGenerateCaption={handleGenerateCaption}
+                  imageUploaded={!!uploadedImage}
+                />
+              </div>
             </div>
 
-            <div className="flex flex-col">
-              <h2 className="text-xl font-semibold mb-4">Caption Generator</h2>
-              <CaptionGenerator
-                caption={caption}
-                editedCaption={editedCaption}
-                setEditedCaption={setEditedCaption}
-                isEditing={isEditing}
-                setIsEditing={setIsEditing}
-                saveEditedCaption={saveEditedCaption}
-                isGenerating={isGenerating}
-                generationStep={generationStep}
-                selectedModel={selectedModel}
-                setSelectedModel={setSelectedModel}
-                tone={tone}
-                setTone={setTone}
-                customPrompt={customPrompt}
-                setCustomPrompt={setCustomPrompt}
-                onGenerateCaption={handleGenerateCaption}
-                imageUploaded={!!uploadedImage}
-              />
+            {/* Team section with visual separator but same background */}
+            <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-bold text-center mb-8">Our Team</h2>
+              <TeamSection />
             </div>
-          </div>
-
-          {/* Team section with visual separator but same background */}
-          <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
-            <h2 className="text-2xl font-bold text-center mb-8">Our Team</h2>
-            <TeamSection />
           </div>
         </div>
       </div>
-    </div>
+    </ProtectedRoute>
   )
 }
 
