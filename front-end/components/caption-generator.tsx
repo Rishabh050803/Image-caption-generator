@@ -30,6 +30,8 @@ interface CaptionGeneratorProps {
   onGenerateCaption: (includeHashtags: boolean) => void
   imageUploaded: boolean
   uploadedImage: string  // Add this line
+  hashtags: boolean
+  setHashtags: (hashtags: boolean) => void
 }
 
 export default function CaptionGenerator({
@@ -52,6 +54,8 @@ export default function CaptionGenerator({
   onGenerateCaption,
   imageUploaded,
   uploadedImage,  // Add this parameter
+  hashtags,
+  setHashtags
 }: CaptionGeneratorProps) {
   const [copied, setCopied] = useState(false)
   const [captionVisible, setCaptionVisible] = useState(false)
@@ -163,6 +167,13 @@ export default function CaptionGenerator({
     return () => clearTimeout(timer)
   }, [caption])
 
+  // Inside the component body, add an effect to reset hashtags when switching to basic mode
+  useEffect(() => {
+    if (selectedModel === "basic" && includeHashtags) {
+      setIncludeHashtags(false);
+    }
+  }, [selectedModel]);
+
   const copyToClipboard = () => {
     navigator.clipboard.writeText(caption)
     setCopied(true)
@@ -227,6 +238,11 @@ export default function CaptionGenerator({
           <div className="space-y-2">
             <Label htmlFor="tone-selection" className="dark:text-gray-200">
               Caption Tone
+              {selectedModel === "basic" && (
+                <span className="text-xs ml-2 text-muted-foreground dark:text-gray-400">
+                  (Available in Advanced mode)
+                </span>
+              )}
             </Label>
             <Select value={tone} onValueChange={setTone} disabled={selectedModel === "basic"}>
               <SelectTrigger id="tone-selection" className={selectedModel === "basic" ? "opacity-50" : ""}>
@@ -265,22 +281,42 @@ export default function CaptionGenerator({
           <div className="space-y-2">
             <Label htmlFor="hashtag-selection" className="dark:text-gray-200">
               Include Hashtags?
+              {selectedModel === "basic" && (
+                <span className="text-xs ml-2 text-muted-foreground dark:text-gray-400">
+                  (Available in Advanced mode)
+                </span>
+              )}
             </Label>
             <RadioGroup
               id="hashtag-selection"
               value={includeHashtags ? "yes" : "no"}
               onValueChange={(value) => setIncludeHashtags(value === "yes")}
               className="flex space-x-4"
+              disabled={selectedModel === "basic"}
             >
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="yes" id="hashtag-yes" />
-                <Label htmlFor="hashtag-yes" className="dark:text-gray-200">
+                <RadioGroupItem 
+                  value="yes" 
+                  id="hashtag-yes" 
+                  disabled={selectedModel === "basic"} 
+                />
+                <Label 
+                  htmlFor="hashtag-yes" 
+                  className={`dark:text-gray-200 ${selectedModel === "basic" ? "opacity-50" : ""}`}
+                >
                   Yes
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="no" id="hashtag-no" />
-                <Label htmlFor="hashtag-no" className="dark:text-gray-200">
+                <RadioGroupItem 
+                  value="no" 
+                  id="hashtag-no" 
+                  disabled={selectedModel === "basic"} 
+                />
+                <Label 
+                  htmlFor="hashtag-no" 
+                  className={`dark:text-gray-200 ${selectedModel === "basic" ? "opacity-50" : ""}`}
+                >
                   No
                 </Label>
               </div>
@@ -370,7 +406,7 @@ export default function CaptionGenerator({
 
         {/* Generate Caption Button */}
         <Button
-          onClick={() => onGenerateCaption(includeHashtags)}
+          onClick={() => onGenerateCaption(selectedModel === "advanced" && includeHashtags)}
           disabled={!imageUploaded || isGenerating}
           className="mt-4"
         >

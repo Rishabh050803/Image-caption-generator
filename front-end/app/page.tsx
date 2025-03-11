@@ -6,22 +6,34 @@ import CaptionGenerator from "@/components/caption-generator"
 import TeamSection from "@/components/team-section"
 import { generateBasicCaption, generateAdvancedCaption, generateHashtags } from "@/lib/caption-service"
 import { Button } from "@/components/ui/button"
-import { Moon, Sun, Github } from "lucide-react"
+import { Moon, Sun, Github, Menu } from "lucide-react"
 import Link from "next/link"
 import { BackgroundBeams } from "@/components/ui/background-beams"
-import { Boxes } from "@/components/ui/background-boxes"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import ProtectedRoute from "@/components/protected-route"
 import { LogoutButton } from "@/components/logout-button"
+import { HistorySidebar } from "@/components/history-sidebar"
 
 // Replace this with your actual GitHub repository URL
 const GITHUB_REPO_URL = "https://github.com/Rishabh050803/Image-caption-generator"
 
+interface RatedCaption {
+  id: number
+  image: string
+  generated_caption: string
+  rating: number
+  tone: string | null
+  custom_instruction: string | null
+  hashtags: string | null
+  refined_caption: string | null
+  created_at: string
+}
+
 export default function Home() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [caption, setCaption] = useState<string>("")
-  const [basicCaption,setBasicCaption] = useState<string>("")
-  const [generatedHashtags,setGeneratedHashtags] = useState<string>("")
+  const [basicCaption, setBasicCaption] = useState<string>("")
+  const [generatedHashtags, setGeneratedHashtags] = useState<string>("")
   const [editedCaption, setEditedCaption] = useState<string>("")
   const [isEditing, setIsEditing] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -31,6 +43,7 @@ export default function Home() {
   const [hashtags, setHashtags] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [generationStep, setGenerationStep] = useState<"idle" | "basic" | "advanced" | "hashtags">("idle")
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   // Initialize dark mode based on user preference
   useEffect(() => {
@@ -61,6 +74,38 @@ export default function Home() {
     setCaption("")
     setEditedCaption("")
     setIsEditing(false)
+  }
+
+  const handleSelectCaption = (selectedCaption: RatedCaption) => {
+    // Set the image
+    setUploadedImage(selectedCaption.image)
+    
+    // Set the caption - prefer refined caption if available
+    const captionText = selectedCaption.refined_caption || selectedCaption.generated_caption
+    setCaption(captionText)
+    setBasicCaption(selectedCaption.generated_caption)
+    setEditedCaption(captionText)
+    
+    // Set hashtags if available
+    if (selectedCaption.hashtags) {
+      setGeneratedHashtags(selectedCaption.hashtags)
+    }
+    
+    // Set tone and custom prompt if available
+    if (selectedCaption.tone) {
+      setTone(selectedCaption.tone)
+      setSelectedModel("advanced") // If tone is set, it was likely an advanced caption
+    }
+    
+    if (selectedCaption.custom_instruction) {
+      setCustomPrompt(selectedCaption.custom_instruction)
+      setSelectedModel("advanced") // If custom instruction is set, it was an advanced caption
+    }
+    
+    // Close the sidebar on mobile after selection
+    if (window.innerWidth < 768) {
+      setIsSidebarOpen(false)
+    }
   }
 
   const handleGenerateCaption = async (containHashtags: boolean) => {
@@ -142,13 +187,29 @@ export default function Home() {
           <BackgroundBeams className="h-full w-full" />
         </div>
 
-        {/* All content container */}
-        <div className="relative z-10">
-          {/* Main section (image upload and caption generator) */}
+        {/* History Sidebar */}
+        <HistorySidebar 
+          onSelectCaption={handleSelectCaption}
+          isOpen={isSidebarOpen}
+          setIsOpen={setIsSidebarOpen}
+        />
+
+        {/* Main Content - Adjust padding to accommodate sidebar */}
+        <div className={`relative z-10 transition-all duration-300 ${isSidebarOpen ? "md:ml-80" : "md:ml-16"}`}>
           <div className="container mx-auto py-12 px-4">
             {/* Header with Title + Buttons */}
             <div className="flex justify-between items-center mb-12">
-              <h1 className="text-3xl font-bold text-center">Image Caption Generator</h1>
+              <div className="flex items-center">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="mr-2 md:hidden" 
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+                <h1 className="text-3xl font-bold text-center">Image Caption Generator</h1>
+              </div>
               <div className="flex items-center gap-4">
                 <TooltipProvider>
                   <Tooltip>
