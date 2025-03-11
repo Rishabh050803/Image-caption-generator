@@ -16,4 +16,8 @@ urlpatterns = [
     # In your api/urls.py file
     path('debug/register/', views.debug_register, name='debug_register'),   
     path('auth/logout/', views.custom_logout, name='api_logout'),
-    ]
+    
+    # Add these to your urlpatterns
+    path('captions/rate/', views.submit_rating, name='submit_rating'),
+    path('captions/ratings/', views.get_user_ratings, name='get_user_ratings'),
+]

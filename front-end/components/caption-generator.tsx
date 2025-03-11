@@ -8,9 +8,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2, Copy, Edit, Check, Save } from "lucide-react"
+import CaptionRating from "./caption-rating"
 
 interface CaptionGeneratorProps {
   caption: string
+  basicCaption:string
+  generatedHashtags:string
   editedCaption: string
   setEditedCaption: (caption: string) => void
   isEditing: boolean
@@ -26,10 +29,13 @@ interface CaptionGeneratorProps {
   setCustomPrompt: (prompt: string) => void
   onGenerateCaption: (includeHashtags: boolean) => void
   imageUploaded: boolean
+  uploadedImage: string  // Add this line
 }
 
 export default function CaptionGenerator({
   caption,
+  basicCaption,
+  generatedHashtags,
   editedCaption,
   setEditedCaption,
   isEditing,
@@ -45,6 +51,7 @@ export default function CaptionGenerator({
   setCustomPrompt,
   onGenerateCaption,
   imageUploaded,
+  uploadedImage,  // Add this parameter
 }: CaptionGeneratorProps) {
   const [copied, setCopied] = useState(false)
   const [captionVisible, setCaptionVisible] = useState(false)
@@ -342,6 +349,20 @@ export default function CaptionGenerator({
                 )
               ) : (
                 <p className="text-muted-foreground text-sm dark:text-gray-400">No caption generated yet.</p>
+              )}
+              {caption && !isEditing && !isGenerating && (
+                <CaptionRating
+                  image={imageUploaded ? uploadedImage : ""}
+                  caption={caption}
+                  tone={tone}
+                  customPrompt={customPrompt}
+                  hashtags={generatedHashtags}  // Use includeHashtags instead of containsHashtags
+                  refinedCaption={selectedModel === "advanced" ? caption : undefined}
+                  onRatingSubmitted={() => {
+                    // Optional: Handle submission success
+                    // e.g., show thank you message or reset form
+                  }}
+                />
               )}
             </div>
           </div>

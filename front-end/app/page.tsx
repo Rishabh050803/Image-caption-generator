@@ -20,6 +20,8 @@ const GITHUB_REPO_URL = "https://github.com/Rishabh050803/Image-caption-generato
 export default function Home() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [caption, setCaption] = useState<string>("")
+  const [basicCaption,setBasicCaption] = useState<string>("")
+  const [generatedHashtags,setGeneratedHashtags] = useState<string>("")
   const [editedCaption, setEditedCaption] = useState<string>("")
   const [isEditing, setIsEditing] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -79,6 +81,7 @@ export default function Home() {
         containHashtags,
         prevCaption: caption,
       })
+      setBasicCaption(basicCaption)
 
       // 2) Advanced refinement (if "advanced" selected)
       if (selectedModel === "advanced") {
@@ -106,6 +109,7 @@ export default function Home() {
           // Limit to 5 for brevity
           tags = tags.slice(0, 5)
           generatedCaption += "\n\n" + tags.join(" ")
+          setGeneratedHashtags(tags.join(","))
         } else {
           console.log("Error in generating hashtags")
         }
@@ -192,6 +196,8 @@ export default function Home() {
                 <h2 className="text-xl font-semibold mb-4">Caption Generator</h2>
                 <CaptionGenerator
                   caption={caption}
+                  basicCaption = {basicCaption}
+                  generatedHashtags = {generatedHashtags}
                   editedCaption={editedCaption}
                   setEditedCaption={setEditedCaption}
                   isEditing={isEditing}
@@ -207,6 +213,7 @@ export default function Home() {
                   setCustomPrompt={setCustomPrompt}
                   onGenerateCaption={handleGenerateCaption}
                   imageUploaded={!!uploadedImage}
+                  uploadedImage={uploadedImage || ""}
                 />
               </div>
             </div>

@@ -10,6 +10,9 @@ from django.shortcuts import redirect
 from django.middleware.csrf import get_token
 from django.http import JsonResponse
 from .services import caption_with_hf_api, refine_caption_with_groq, generate_hashtags
+from rest_framework import viewsets, permissions
+from .models import RatedCaption
+from .serializers import RatedCaptionSerializer
 
 @api_view(["POST"])
 @parser_classes([MultiPartParser])
@@ -195,3 +198,29 @@ def custom_logout(request):
     
     logger.info("User logged out, cookies cleared")
     return response
+
+class RatedCaptionViewSet(viewsets.ModelViewSet):
+    serializer_class = RatedCaptionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        # Users can only see their own rated captions
+        return RatedCaption.objects.filter(user=self.request.user)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def submit_rating(request):
+    """Submit a new caption rating"""
+    serializer = RatedCaptionSerializer(data=request.data, context={'request': request})
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=201)
+    return Response(serializer.errors, status=400)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_ratings(request):
+    """Get all ratings submitted by the current user"""
+    ratings = RatedCaption.objects.filter(user=request.user)
+    serializer = RatedCaptionSerializer(ratings, many=True, context={'request': request})
+    return Response(serializer.data)
