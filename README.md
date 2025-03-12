@@ -50,7 +50,7 @@ cd Image-caption-app
 
  ### Create virtual environment
 ```bash
-python -m venv venv
+python -m venv .venv
 ```
 ### Activate Virtual Environment
 ```bash
@@ -62,7 +62,7 @@ source .venv/bin/activate
 ```
 ### Install dependencies
 ```bash
-pip install -r requirements.txt
+pip install -r requirement.txt
 ```
 
 ### Configure environment

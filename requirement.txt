@@ -19,11 +19,14 @@ python-dotenv>=1.0.0
 Pillow>=10.1.0  # For image processing
 requests>=2.31.0  # For API calls
 pyyaml>=6.0.1  # For configuration files
+groq>=0.4.0  # Groq API client
+cryptography>=41.0.0  # For encryption and security functions
 
 # Development tools
 black>=23.11.0  # Code formatter
 isort>=5.12.0  # Import sorter
 flake8>=6.1.0  # Linter
+
 
 # Production (uncomment when deploying)
 # gunicorn>=21.2.0  # WSGI server

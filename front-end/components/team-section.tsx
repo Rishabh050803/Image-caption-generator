@@ -19,8 +19,8 @@ const teamMembers: TeamMember[] = [
   {
     name: "Divyansh Pokharna",
     role: "ML Engineer",
-    github: "https://github.com/janesmith",
-    avatar: "/placeholder.svg?height=100&width=100",
+    github: "https://github.com/Divy190905",
+    avatar: "/divyansh.png?height=100&width=100",
   },
   {
     name: "Dhruv Parashar",
