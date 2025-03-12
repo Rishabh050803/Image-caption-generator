@@ -27,6 +27,9 @@ black>=23.11.0  # Code formatter
 isort>=5.12.0  # Import sorter
 flake8>=6.1.0  # Linter
 
+# External requirements (not pip-installable)
+# Node.js and yarn should be installed separately
+# Run 'yarn install' in the frontend directory
 
 # Production (uncomment when deploying)
 # gunicorn>=21.2.0  # WSGI server
