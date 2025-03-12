@@ -6,6 +6,12 @@ import threading
 import concurrent.futures
 from groq import Groq
 from dotenv import load_dotenv
+from pathlib import Path
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from the .env file located in the parent directory (caption_backend/)
+load_dotenv(dotenv_path=BASE_DIR / ".env")
 
 
 # # Get the absolute path of the parent directory
@@ -19,12 +25,9 @@ from dotenv import load_dotenv
 
 # Get the API key
 # api_key = os.getenv("API_KEY")
-api_key = "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"
+HF_API_URL = os.getenv("HF_API_URL", )
 
-# Constants (use environment variables for production)
-HF_API_URL = "https://rishabh2234-image-captionator.hf.space/generate_caption/"
-# GROQ_API_KEY = api_key
-GROQ_API_KEY = "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" 
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "fallback-secret-key")
 HF_TIMEOUT = 60  # Timeout for caption generation in seconds
 GROQ_TIMEOUT = 25  # Timeout for Groq API calls in seconds
 
@@ -143,7 +146,7 @@ def refine_caption_with_groq(caption: str, tone: str, additional_info: str) -> s
         word_count = len(refined.split())
         print(f"Refined caption word count: {word_count}")
         
-        if word_count < 15 or word_count > 60:  # Using wider bounds for validation to be safe
+        if word_count < 7 or word_count > 60:  # Using wider bounds for validation to be safe
             print(f"Caption length outside desired range ({word_count} words), using original")
             return caption
         
