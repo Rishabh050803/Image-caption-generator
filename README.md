@@ -1,7 +1,7 @@
 # Image Caption Generator 🔖
 
-![Banner](https://via.placeholder.com/1200x400?text=Image+Caption+Generator)
-_A full-stack AI-powered solution for generating social media captions from images_
+
+A full-stack AI-powered solution for generating social media captions from images_
 
 ## Features ✨
 
