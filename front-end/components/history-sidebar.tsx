@@ -26,6 +26,41 @@ interface HistorySidebarProps {
   setIsOpen: (isOpen: boolean) => void
 }
 
+// Tone color mapping
+const toneColorMap: Record<string, { bg: string, bgDark: string, text: string }> = {
+  formal: {
+    bg: "bg-blue-100",
+    bgDark: "dark:bg-blue-900/40", 
+    text: "dark:text-blue-300"
+  },
+  creative: {
+    bg: "bg-purple-100",
+    bgDark: "dark:bg-purple-900/40", 
+    text: "dark:text-purple-300"
+  },
+  funny: {
+    bg: "bg-amber-100",
+    bgDark: "dark:bg-amber-900/40", 
+    text: "dark:text-amber-300"
+  },
+  professional: {
+    bg: "bg-emerald-100",
+    bgDark: "dark:bg-emerald-900/40", 
+    text: "dark:text-emerald-300"
+  },
+  casual: {
+    bg: "bg-rose-100",
+    bgDark: "dark:bg-rose-900/40", 
+    text: "dark:text-rose-300"
+  },
+  // Default color for any other tone
+  default: {
+    bg: "bg-gray-100",
+    bgDark: "dark:bg-gray-800", 
+    text: "dark:text-gray-300"
+  }
+};
+
 export function HistorySidebar({ onSelectCaption, isOpen, setIsOpen }: HistorySidebarProps) {
   const [captions, setCaptions] = useState<RatedCaption[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -59,6 +94,16 @@ export function HistorySidebar({ onSelectCaption, isOpen, setIsOpen }: HistorySi
   const toggleSidebar = () => {
     setIsOpen(!isOpen)
   }
+
+  // Function to get tone color classes
+  const getToneColorClasses = (tone: string | null): string => {
+    if (!tone) return `${toneColorMap.default.bg} ${toneColorMap.default.bgDark} ${toneColorMap.default.text}`;
+    
+    const toneKey = tone.toLowerCase();
+    const colorSet = toneColorMap[toneKey] || toneColorMap.default;
+    
+    return `${colorSet.bg} ${colorSet.bgDark} ${colorSet.text}`;
+  };
 
   return (
     <div className={`fixed top-0 left-0 h-full z-20 transition-all duration-300 flex ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0 md:w-16"}`}>
@@ -112,7 +157,7 @@ export function HistorySidebar({ onSelectCaption, isOpen, setIsOpen }: HistorySi
 
                     {caption.tone && (
                       <div className="mt-2 text-xs">
-                        <span className="px-2 py-1 rounded bg-blue-100 dark:bg-blue-900 dark:text-blue-300">
+                        <span className={`px-2 py-1 rounded ${getToneColorClasses(caption.tone)}`}>
                           {caption.tone}
                         </span>
                       </div>

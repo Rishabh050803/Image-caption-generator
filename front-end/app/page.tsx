@@ -6,10 +6,12 @@ import CaptionGenerator from "@/components/caption-generator"
 import TeamSection from "@/components/team-section"
 import { generateBasicCaption, generateAdvancedCaption, generateHashtags } from "@/lib/caption-service"
 import { Button } from "@/components/ui/button"
-import { Moon, Sun, Github, Menu } from "lucide-react"
+import { Moon, Sun, Github, Menu, AlertCircle, WifiOff, Clock } from "lucide-react"
 import Link from "next/link"
 import { BackgroundBeams } from "@/components/ui/background-beams"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { toast } from "sonner"
 import ProtectedRoute from "@/components/protected-route"
 import { LogoutButton } from "@/components/logout-button"
 import { HistorySidebar } from "@/components/history-sidebar"
@@ -44,6 +46,10 @@ export default function Home() {
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [generationStep, setGenerationStep] = useState<"idle" | "basic" | "advanced" | "hashtags">("idle")
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [error, setError] = useState<{
+    type: "connection" | "timeout" | "server" | "generation" | null;
+    message: string;
+  }>({ type: null, message: "" })
 
   // Initialize dark mode based on user preference
   useEffect(() => {
@@ -55,6 +61,52 @@ export default function Home() {
       }
     }
   }, [])
+
+  // Check for internet connectivity
+  useEffect(() => {
+    const handleOnline = () => {
+      setError(prevError => {
+        if (prevError?.type === "connection") {
+          toast.success("You're back online!");
+          return { type: null, message: "" };
+        }
+        return prevError;
+      });
+    };
+
+    const handleOffline = () => {
+      setError(prevError => {
+        // Only set error if we don't already have a connection error
+        if (prevError?.type !== "connection") {
+          toast.error("You're offline! Please check your connection.");
+          return {
+            type: "connection",
+            message: "You appear to be offline. Please check your internet connection."
+          };
+        }
+        return prevError;
+      });
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    // Check initial state (but don't cause infinite loops)
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      // Use a setTimeout to avoid the loop during initial render
+      const timer = setTimeout(handleOffline, 0);
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener("online", handleOnline);
+        window.removeEventListener("offline", handleOffline);
+      };
+    }
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []); // No dependencies!
 
   const toggleDarkMode = () => {
     const newMode = !isDarkMode
@@ -74,110 +126,266 @@ export default function Home() {
     setCaption("")
     setEditedCaption("")
     setIsEditing(false)
+    setError({ type: null, message: "" }) // Clear any previous errors
   }
 
   const handleSelectCaption = (selectedCaption: RatedCaption) => {
-    // Set the image
-    setUploadedImage(selectedCaption.image)
-    
-    // Set the caption - prefer refined caption if available
-    const captionText = selectedCaption.refined_caption || selectedCaption.generated_caption
-    setCaption(captionText)
-    setBasicCaption(selectedCaption.generated_caption)
-    setEditedCaption(captionText)
-    
-    // Set hashtags if available
-    if (selectedCaption.hashtags) {
-      setGeneratedHashtags(selectedCaption.hashtags)
-    }
-    
-    // Set tone and custom prompt if available
-    if (selectedCaption.tone) {
-      setTone(selectedCaption.tone)
-      setSelectedModel("advanced") // If tone is set, it was likely an advanced caption
-    }
-    
-    if (selectedCaption.custom_instruction) {
-      setCustomPrompt(selectedCaption.custom_instruction)
-      setSelectedModel("advanced") // If custom instruction is set, it was an advanced caption
-    }
-    
-    // Close the sidebar on mobile after selection
-    if (window.innerWidth < 768) {
-      setIsSidebarOpen(false)
+    try {
+      // Set the image
+      setUploadedImage(selectedCaption.image)
+      
+      // Set the caption - prefer refined caption if available
+      const captionText = selectedCaption.refined_caption || selectedCaption.generated_caption
+      setCaption(captionText)
+      setBasicCaption(selectedCaption.generated_caption)
+      setEditedCaption(captionText)
+      
+      // Set hashtags if available
+      if (selectedCaption.hashtags) {
+        setGeneratedHashtags(selectedCaption.hashtags)
+      }
+      
+      // Set tone and custom prompt if available
+      if (selectedCaption.tone) {
+        setTone(selectedCaption.tone)
+        setSelectedModel("advanced") // If tone is set, it was likely an advanced caption
+      }
+      
+      if (selectedCaption.custom_instruction) {
+        setCustomPrompt(selectedCaption.custom_instruction)
+        setSelectedModel("advanced") // If custom instruction is set, it was an advanced caption
+      }
+      
+      // Clear any previous errors
+      setError({ type: null, message: "" })
+      
+      // Close the sidebar on mobile after selection
+      if (window.innerWidth < 768) {
+        setIsSidebarOpen(false)
+      }
+    } catch (err) {
+      console.error("Error selecting caption:", err);
+      setError({ 
+        type: "server", 
+        message: "Failed to load caption details. Please try again." 
+      });
     }
   }
+
+  // Helper function to handle API calls with timeout
+  const fetchWithTimeout = async (
+    promiseFn: () => Promise<any>, 
+    timeoutMs: number = 30000,
+    errorMessage: string = "Request timed out"
+  ) => {
+    // Define timeoutId as potentially undefined
+    let timeoutId: NodeJS.Timeout | undefined;
+    
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error("TIMEOUT"));
+      }, timeoutMs);
+    });
+    
+    try {
+      const result = await Promise.race([promiseFn(), timeoutPromise]);
+      // Only clear the timeout if it was set
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      return result;
+    } catch (error) {
+      // Also clear the timeout in the catch block to prevent memory leaks
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
+      if (error instanceof Error && error.message === "TIMEOUT") {
+        throw new Error(errorMessage);
+      }
+      throw error;
+    }
+  };
 
   const handleGenerateCaption = async (containHashtags: boolean) => {
-    if (!uploadedImage) return
+    if (!uploadedImage) return;
   
-    setIsGenerating(true)
-    setIsEditing(false)
-    setGenerationStep("basic")
+    setIsGenerating(true);
+    setIsEditing(false);
+    setGenerationStep("basic");
+    setError({ type: null, message: "" }); // Clear any previous errors
   
     try {
+      // First, check if we're online
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        throw new Error("You appear to be offline. Please check your internet connection.");
+      }
+  
       // 1) Generate the basic caption and store it separately
-      const basicCaptionResult = await generateBasicCaption({
-        image: uploadedImage,
-        model: selectedModel,
-        tone: selectedModel === "advanced" ? tone : "formal",
-        customPrompt: selectedModel === "advanced" ? customPrompt : "",
-        containHashtags,
-        prevCaption: caption,
-      })
-      setBasicCaption(basicCaptionResult)
-      let finalCaption = basicCaptionResult
-  
-      // 2) If advanced mode is selected, generate a refined caption
-      if (selectedModel === "advanced") {
-        setGenerationStep("advanced")
-        const refinedCaptionResult = await generateAdvancedCaption({
-          image: uploadedImage,
-          model: selectedModel,
-          tone,
-          customPrompt,
-          containHashtags,
-          prevCaption: caption,
-        })
-        if (refinedCaptionResult !== "error") {
-          finalCaption = refinedCaptionResult
-        } else {
-          console.log("Error in refining caption")
+      try {
+        const basicCaptionResult = await fetchWithTimeout(
+          () => generateBasicCaption({
+            image: uploadedImage,
+            model: selectedModel,
+            tone: selectedModel === "advanced" ? tone : "formal",
+            customPrompt: selectedModel === "advanced" ? customPrompt : "",
+            containHashtags,
+            prevCaption: caption,
+          }),
+          45000, // 45 second timeout
+          "Basic caption generation timed out. The server might be busy."
+        );
+        
+        setBasicCaption(basicCaptionResult);
+        let finalCaption = basicCaptionResult;
+        
+        // 2) If advanced mode is selected, generate a refined caption
+        if (selectedModel === "advanced") {
+          setGenerationStep("advanced");
+          
+          try {
+            const refinedCaptionResult = await fetchWithTimeout(
+              () => generateAdvancedCaption({
+                image: uploadedImage,
+                model: selectedModel,
+                tone,
+                customPrompt,
+                containHashtags,
+                prevCaption: caption,
+              }),
+              60000, // 60 second timeout
+              "Advanced caption refinement timed out. Using the basic caption instead."
+            );
+            
+            if (refinedCaptionResult !== "error") {
+              finalCaption = refinedCaptionResult;
+            } else {
+              toast.warning("Advanced refinement failed. Using basic caption.");
+              console.log("Error in refining caption");
+            }
+          } catch (advancedError) {
+            console.error("Advanced caption error:", advancedError);
+            toast.warning(advancedError instanceof Error ? advancedError.message : "Advanced refinement failed. Using basic caption.");
+            // Continue with basic caption
+          }
         }
-      }
-  
-      // 3) Generate hashtags if required
-      if (containHashtags) {
-        setGenerationStep("hashtags")
-        let tags = await generateHashtags(finalCaption)
-        if (tags.length > 0) {
-          // Limit to 5 for brevity
-          tags = tags.slice(0, 5)
-          finalCaption += "\n\n" + tags.join(" ")
-          setGeneratedHashtags(tags.join(","))
-        } else {
-          console.log("Error in generating hashtags")
+    
+        // 3) Generate hashtags if required
+        if (containHashtags) {
+          setGenerationStep("hashtags");
+          
+          try {
+            let tags = await fetchWithTimeout(
+              () => generateHashtags(finalCaption),
+              30000, // 30 second timeout
+              "Hashtag generation timed out."
+            );
+            
+            if (tags.length > 0) {
+              // Limit to 5 for brevity
+              tags = tags.slice(0, 5);
+              finalCaption += "\n\n" + tags.join(" ");
+              setGeneratedHashtags(tags.join(","));
+            } else {
+              toast.warning("Couldn't generate hashtags");
+              console.log("Error in generating hashtags");
+            }
+          } catch (hashtagError) {
+            console.error("Hashtag error:", hashtagError);
+            toast.warning(hashtagError instanceof Error ? hashtagError.message : "Couldn't generate hashtags");
+            // Continue without hashtags
+          }
         }
+    
+        // Save the final caption (refined if applicable) and set edited caption
+        setCaption(finalCaption);
+        setEditedCaption(finalCaption);
+        toast.success("Caption generated successfully!");
+        
+      } catch (basicError) {
+        console.error("Basic caption error:", basicError);
+        
+        if (basicError instanceof Error) {
+          if (basicError.message.includes("timeout") || basicError.message.includes("timed out")) {
+            setError({ type: "timeout", message: basicError.message });
+          } else {
+            setError({ type: "generation", message: "Failed to generate caption. Please try again." });
+          }
+        } else {
+          setError({ type: "server", message: "Server error. Please try again later." });
+        }
+        
+        toast.error("Caption generation failed");
       }
-  
-      // Save the final caption (refined if applicable) and set edited caption
-      setCaption(finalCaption)
-      setEditedCaption(finalCaption)
+      
     } catch (error) {
-      console.error("Error generating caption:", error)
+      console.error("Caption generation error:", error);
+      
+      // Determine error type and set appropriate message
+      if (error instanceof Error) {
+        if (error.message.includes("offline")) {
+          setError({ type: "connection", message: error.message });
+        } else if (error.message.includes("NetworkError") || error.message.includes("Failed to fetch")) {
+          setError({ type: "connection", message: "Network error. Please check your connection or the server might be down." });
+        } else if (error.message.includes("timeout") || error.message.includes("timed out")) {
+          setError({ type: "timeout", message: "The request timed out. Server may be busy." });
+        } else {
+          setError({ type: "server", message: "Something went wrong. Please try again later." });
+        }
+      } else {
+        setError({ type: "server", message: "An unknown error occurred." });
+      }
+      
+      toast.error("Caption generation failed");
     } finally {
-      setIsGenerating(false)
-      setGenerationStep("idle")
+      setIsGenerating(false);
+      setGenerationStep("idle");
     }
-  }
-  
-
-
+  };
 
   const saveEditedCaption = () => {
     setCaption(editedCaption)
     setIsEditing(false)
   }
+
+  // Function to dismiss error
+  const dismissError = () => {
+    setError({ type: null, message: "" });
+  };
+
+  // Error message component
+  const ErrorMessage = () => {
+    if (!error.type) return null;
+    
+    const errorIcons = {
+      connection: <WifiOff className="h-5 w-5" />,
+      timeout: <Clock className="h-5 w-5" />,
+      server: <AlertCircle className="h-5 w-5" />,
+      generation: <AlertCircle className="h-5 w-5" />
+    };
+    
+    const icon = errorIcons[error.type] || <AlertCircle className="h-5 w-5" />;
+    
+    return (
+      <Alert variant="destructive" className="mb-6">
+        <div className="flex items-start">
+          {icon}
+          <div className="ml-3 flex-1">
+            <AlertTitle>
+              {error.type === "connection" && "Connection Error"}
+              {error.type === "timeout" && "Request Timeout"}
+              {error.type === "server" && "Server Error"}
+              {error.type === "generation" && "Generation Error"}
+            </AlertTitle>
+            <AlertDescription>{error.message}</AlertDescription>
+          </div>
+          <Button variant="ghost" size="sm" onClick={dismissError}>
+            Dismiss
+          </Button>
+        </div>
+      </Alert>
+    );
+  };
 
   return (
     <ProtectedRoute>
@@ -236,7 +444,6 @@ export default function Home() {
                   {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                 </Button>
                 
-                {/* Add the Logout button here */}
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -250,6 +457,9 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Error display area */}
+            <ErrorMessage />
+
             {/* Main Grid: Left=Image Upload, Right=Caption */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
               <div className="flex flex-col">
@@ -261,8 +471,8 @@ export default function Home() {
                 <h2 className="text-xl font-semibold mb-4">Caption Generator</h2>
                 <CaptionGenerator
                   caption={caption}
-                  basicCaption = {basicCaption}
-                  generatedHashtags = {generatedHashtags}
+                  basicCaption={basicCaption}
+                  generatedHashtags={generatedHashtags}
                   editedCaption={editedCaption}
                   setEditedCaption={setEditedCaption}
                   isEditing={isEditing}
@@ -279,6 +489,8 @@ export default function Home() {
                   onGenerateCaption={handleGenerateCaption}
                   imageUploaded={!!uploadedImage}
                   uploadedImage={uploadedImage || ""}
+                  hashtags={hashtags}
+                  setHashtags={setHashtags} 
                 />
               </div>
             </div>
