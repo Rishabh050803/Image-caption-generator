@@ -6,15 +6,16 @@ import CaptionGenerator from "@/components/caption-generator"
 import TeamSection from "@/components/team-section"
 import { generateBasicCaption, generateAdvancedCaption, generateHashtags } from "@/lib/caption-service"
 import { Button } from "@/components/ui/button"
-import { Moon, Sun, Github, Menu, AlertCircle, WifiOff, Clock } from "lucide-react"
+import { Moon, Sun, Github, Menu, AlertCircle, WifiOff, Clock, LogIn } from "lucide-react"
 import Link from "next/link"
 import { BackgroundBeams } from "@/components/ui/background-beams"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { toast } from "sonner"
-import ProtectedRoute from "@/components/protected-route"
+import AuthWrapper from "@/components/auth-wrapper"
 import { LogoutButton } from "@/components/logout-button"
 import { HistorySidebar } from "@/components/history-sidebar"
+import { useAuth } from "@/lib/auth"
 
 // Replace this with your actual GitHub repository URL
 const GITHUB_REPO_URL = "https://github.com/Rishabh050803/Image-caption-generator"
@@ -32,6 +33,8 @@ interface RatedCaption {
 }
 
 export default function Home() {
+  const { isAuthenticated } = useAuth()
+  
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [caption, setCaption] = useState<string>("")
   const [basicCaption, setBasicCaption] = useState<string>("")
@@ -388,7 +391,7 @@ export default function Home() {
   };
 
   return (
-    <ProtectedRoute>
+    <AuthWrapper>
       <div className={`min-h-screen transition-colors relative ${isDarkMode ? "dark bg-black text-white" : "bg-white"}`}>
         {/* Unified background for the entire page */}
         <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -408,14 +411,16 @@ export default function Home() {
             {/* Header with Title + Buttons */}
             <div className="flex justify-between items-center mb-12">
               <div className="flex items-center">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="mr-2 md:hidden" 
-                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
+                {isAuthenticated && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="mr-2 md:hidden" 
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                  >
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                )}
                 <h1 className="text-3xl font-bold text-center">Image Caption Generator</h1>
               </div>
               <div className="flex items-center gap-4">
@@ -444,21 +449,58 @@ export default function Home() {
                   {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                 </Button>
                 
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <LogoutButton />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Logout</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                {isAuthenticated ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <LogoutButton />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Logout</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link href="/login">
+                          <Button variant="outline" size="icon" className="rounded-full">
+                            <LogIn className="h-5 w-5" />
+                            <span className="sr-only">Login</span>
+                          </Button>
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Login</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </div>
             </div>
 
             {/* Error display area */}
             <ErrorMessage />
+
+            {/* Welcome message for non-authenticated users */}
+            {!isAuthenticated && (
+              <div className="mb-8 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
+                <h2 className="text-lg font-semibold mb-2">Welcome to Image Caption Generator</h2>
+                <p className="mb-4">
+                  You can use basic caption generation without an account. Sign up to access advanced features, 
+                  including custom tones, personalized instructions, hashtags, and caption history!
+                </p>
+                <div className="flex gap-3">
+                  <Link href="/login">
+                    <Button variant="outline" size="sm">Log In</Button>
+                  </Link>
+                  <Link href="/register">
+                    <Button size="sm">Sign Up</Button>
+                  </Link>
+                </div>
+              </div>
+            )}
 
             {/* Main Grid: Left=Image Upload, Right=Caption */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
@@ -503,7 +545,7 @@ export default function Home() {
           </div>
         </div>
       </div>
-    </ProtectedRoute>
+    </AuthWrapper>
   )
 }
 

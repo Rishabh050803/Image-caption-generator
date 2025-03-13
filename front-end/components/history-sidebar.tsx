@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { ChevronLeft, ChevronRight, Star, Image, FileText, Clock } from "lucide-react"
+import { ChevronLeft, ChevronRight, Star, Image, FileText, Clock, Lock, RefreshCw } from "lucide-react"
 import { format } from "date-fns"
 import { truncate } from "@/lib/utils"
 import { useAuth } from "@/lib/auth"
+import Link from "next/link"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface RatedCaption {
   id: number
@@ -64,11 +66,16 @@ const toneColorMap: Record<string, { bg: string, bgDark: string, text: string }>
 export function HistorySidebar({ onSelectCaption, isOpen, setIsOpen }: HistorySidebarProps) {
   const [captions, setCaptions] = useState<RatedCaption[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const { isAuthenticated } = useAuth()
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchCaptions()
+    } else {
+      // Clear captions if not authenticated
+      setCaptions([])
+      setIsLoading(false)
     }
   }, [isAuthenticated])
 
@@ -88,6 +95,14 @@ export function HistorySidebar({ onSelectCaption, isOpen, setIsOpen }: HistorySi
       console.error("Error fetching captions:", error)
     } finally {
       setIsLoading(false)
+      setIsRefreshing(false)
+    }
+  }
+
+  const handleRefresh = () => {
+    if (isAuthenticated && !isRefreshing) {
+      setIsRefreshing(true)
+      fetchCaptions()
     }
   }
 
@@ -111,16 +126,62 @@ export function HistorySidebar({ onSelectCaption, isOpen, setIsOpen }: HistorySi
       <div className={`bg-white dark:bg-gray-900 h-full shadow-xl flex flex-col ${isOpen ? "w-80" : "w-0 md:w-16"}`}>
         {/* Header */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          {isOpen && <h2 className="font-semibold">Caption History</h2>}
+          {isOpen && (
+            <>
+              <h2 className="font-semibold">Caption History</h2>
+              
+              {isAuthenticated && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        className="mr-2"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        <span className="sr-only">Refresh</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Refresh history</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </>
+          )}
           <Button variant="ghost" size="icon" className="ml-auto" onClick={toggleSidebar}>
             {isOpen ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
           </Button>
         </div>
 
-        {/* Caption List */}
+        {/* Caption List or Login Prompt */}
         {isOpen && (
           <ScrollArea className="flex-1">
-            {isLoading ? (
+            {!isAuthenticated ? (
+              <div className="p-6 flex flex-col items-center justify-center h-full text-center">
+                <Lock className="h-16 w-16 mb-4 text-muted-foreground opacity-50" />
+                <h3 className="text-lg font-medium mb-2">Login Required</h3>
+                <p className="text-muted-foreground mb-6">
+                  Sign in to view and manage your caption history.
+                </p>
+                <div className="space-y-3 w-full">
+                  <Link href="/login" className="w-full">
+                    <Button variant="default" className="w-full">
+                      Login
+                    </Button>
+                  </Link>
+                  <Link href="/register" className="w-full">
+                    <Button variant="outline" className="w-full">
+                      Sign Up
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            ) : isLoading ? (
               <div className="flex justify-center items-center h-40">
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
               </div>
@@ -180,12 +241,35 @@ export function HistorySidebar({ onSelectCaption, isOpen, setIsOpen }: HistorySi
             <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hover:bg-gray-100 dark:hover:bg-gray-800">
               <Image className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hover:bg-gray-100 dark:hover:bg-gray-800">
-              <Clock className="h-5 w-5" />
-            </Button>
-            <div className="text-xs font-medium text-center dark:text-gray-400">
-              {captions.length}
-            </div>
+            
+            {isAuthenticated ? (
+              <>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hover:bg-gray-100 dark:hover:bg-gray-800">
+                  <Clock className="h-5 w-5" />
+                </Button>
+                <div className="text-xs font-medium text-center dark:text-gray-400">
+                  {captions.length}
+                </div>
+              </>
+            ) : (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={toggleSidebar} 
+                className="hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <Lock className="h-5 w-5 text-muted-foreground" />
+              </Button>
+            )}
           </div>
         )}
       </div>

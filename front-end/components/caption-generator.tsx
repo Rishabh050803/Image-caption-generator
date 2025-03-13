@@ -7,8 +7,10 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { Loader2, Copy, Edit, Check, Save } from "lucide-react"
+import { Loader2, Copy, Edit, Check, Save, Lock } from "lucide-react"
 import CaptionRating from "./caption-rating"
+import { useAuth } from "@/lib/auth"
+import { LoginPrompt } from "./login-prompt"
 
 interface CaptionGeneratorProps {
   caption: string
@@ -64,6 +66,9 @@ export default function CaptionGenerator({
   const [showLongWaitMessage, setShowLongWaitMessage] = useState(false)
   const loadingTimerRef = useRef<NodeJS.Timeout | null>(null)
   const longWaitTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Get authentication status
+  const { isAuthenticated } = useAuth();
 
   // Define loading states for each step
   const loadingStates = [
@@ -174,6 +179,13 @@ export default function CaptionGenerator({
     }
   }, [selectedModel]);
 
+  useEffect(() => {
+    if (selectedModel === "advanced" && !isAuthenticated) {
+      // If user selects advanced but is not logged in, revert to basic
+      setSelectedModel("basic");
+    }
+  }, [selectedModel, isAuthenticated]);
+
   const copyToClipboard = () => {
     navigator.clipboard.writeText(caption)
     setCopied(true)
@@ -226,26 +238,45 @@ export default function CaptionGenerator({
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="advanced" id="advanced" />
-                <Label htmlFor="advanced" className="dark:text-gray-200">
+                <RadioGroupItem 
+                  value="advanced" 
+                  id="advanced" 
+                  disabled={!isAuthenticated}
+                />
+                <Label 
+                  htmlFor="advanced" 
+                  className={`dark:text-gray-200 flex items-center ${!isAuthenticated ? "opacity-50" : ""}`}
+                >
                   Advanced
+                  {!isAuthenticated && <Lock className="h-3 w-3 ml-1" />}
                 </Label>
               </div>
             </RadioGroup>
+            
+            {!isAuthenticated && selectedModel === "basic" && (
+              <LoginPrompt 
+                variant="inline" 
+                description="Log in to access advanced caption features" 
+              />
+            )}
           </div>
 
           {/* Caption Tone Selection */}
-          <div className="space-y-2">
+          <div className="space-y-2 relative">
             <Label htmlFor="tone-selection" className="dark:text-gray-200">
               Caption Tone
-              {selectedModel === "basic" && (
+              {(selectedModel === "basic" || !isAuthenticated) && (
                 <span className="text-xs ml-2 text-muted-foreground dark:text-gray-400">
                   (Available in Advanced mode)
                 </span>
               )}
             </Label>
-            <Select value={tone} onValueChange={setTone} disabled={selectedModel === "basic"}>
-              <SelectTrigger id="tone-selection" className={selectedModel === "basic" ? "opacity-50" : ""}>
+            <Select 
+              value={tone} 
+              onValueChange={setTone} 
+              disabled={selectedModel === "basic" || !isAuthenticated}
+            >
+              <SelectTrigger id="tone-selection" className={(selectedModel === "basic" || !isAuthenticated) ? "opacity-50" : ""}>
                 <SelectValue placeholder="Select tone" />
               </SelectTrigger>
               <SelectContent>
@@ -266,14 +297,14 @@ export default function CaptionGenerator({
             <Textarea
               id="custom-prompt"
               placeholder={
-                selectedModel === "basic"
+                (selectedModel === "basic" || !isAuthenticated)
                   ? "Available in Advanced mode"
                   : "Add specific instructions for caption generation..."
               }
               value={customPrompt}
               onChange={(e) => setCustomPrompt(e.target.value)}
-              disabled={selectedModel === "basic"}
-              className={`resize-none dark:bg-gray-900 dark:text-gray-200 ${selectedModel === "basic" ? "opacity-50" : ""}`}
+              disabled={selectedModel === "basic" || !isAuthenticated}
+              className={`resize-none dark:bg-gray-900 dark:text-gray-200 ${(selectedModel === "basic" || !isAuthenticated) ? "opacity-50" : ""}`}
             />
           </div>
 
@@ -281,7 +312,7 @@ export default function CaptionGenerator({
           <div className="space-y-2">
             <Label htmlFor="hashtag-selection" className="dark:text-gray-200">
               Include Hashtags?
-              {selectedModel === "basic" && (
+              {(selectedModel === "basic" || !isAuthenticated) && (
                 <span className="text-xs ml-2 text-muted-foreground dark:text-gray-400">
                   (Available in Advanced mode)
                 </span>
@@ -292,17 +323,17 @@ export default function CaptionGenerator({
               value={includeHashtags ? "yes" : "no"}
               onValueChange={(value) => setIncludeHashtags(value === "yes")}
               className="flex space-x-4"
-              disabled={selectedModel === "basic"}
+              disabled={selectedModel === "basic" || !isAuthenticated}
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem 
                   value="yes" 
                   id="hashtag-yes" 
-                  disabled={selectedModel === "basic"} 
+                  disabled={selectedModel === "basic" || !isAuthenticated} 
                 />
                 <Label 
                   htmlFor="hashtag-yes" 
-                  className={`dark:text-gray-200 ${selectedModel === "basic" ? "opacity-50" : ""}`}
+                  className={`dark:text-gray-200 ${(selectedModel === "basic" || !isAuthenticated) ? "opacity-50" : ""}`}
                 >
                   Yes
                 </Label>
@@ -311,11 +342,11 @@ export default function CaptionGenerator({
                 <RadioGroupItem 
                   value="no" 
                   id="hashtag-no" 
-                  disabled={selectedModel === "basic"} 
+                  disabled={selectedModel === "basic" || !isAuthenticated} 
                 />
                 <Label 
                   htmlFor="hashtag-no" 
-                  className={`dark:text-gray-200 ${selectedModel === "basic" ? "opacity-50" : ""}`}
+                  className={`dark:text-gray-200 ${(selectedModel === "basic" || !isAuthenticated) ? "opacity-50" : ""}`}
                 >
                   No
                 </Label>
@@ -356,7 +387,7 @@ export default function CaptionGenerator({
                 </div>
               )}
             </div>
-            <div className="border rounded-md p-3 min-h-[150px] bg-muted/30 dark:bg-gray-900 dark:border-gray-800">
+            <div className="border rounded-md p-3 min-h-[150px] bg-muted/30 dark:bg-gray-900 dark:border-gray-800 relative">
               {isGenerating ? (
                 <div className="flex flex-col items-center justify-center h-full space-y-4">
                   {renderLoadingContent()}
@@ -386,19 +417,32 @@ export default function CaptionGenerator({
               ) : (
                 <p className="text-muted-foreground text-sm dark:text-gray-400">No caption generated yet.</p>
               )}
+              
+              {/* Caption Rating or Login Prompt */}
               {caption && !isEditing && !isGenerating && (
-                <CaptionRating
-                  image={imageUploaded ? uploadedImage : ""}
-                  caption={basicCaption}
-                  tone={tone}
-                  customPrompt={customPrompt}
-                  hashtags={generatedHashtags}  // Use includeHashtags instead of containsHashtags
-                  refinedCaption={selectedModel === "advanced" ? caption : undefined}
-                  onRatingSubmitted={() => {
-                    // Optional: Handle submission success
-                    // e.g., show thank you message or reset form
-                  }}
-                />
+                <>
+                  {isAuthenticated ? (
+                    <CaptionRating
+                      image={imageUploaded ? uploadedImage : ""}
+                      caption={basicCaption}
+                      tone={tone}
+                      customPrompt={customPrompt}
+                      hashtags={generatedHashtags}
+                      refinedCaption={selectedModel === "advanced" ? caption : undefined}
+                      onRatingSubmitted={() => {
+                        // Optional: Handle submission success
+                      }}
+                    />
+                  ) : (
+                    <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <LoginPrompt 
+                        variant="inline"
+                        title="Rate this Caption" 
+                        description="Log in to rate this caption and save it to your history"
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -406,7 +450,7 @@ export default function CaptionGenerator({
 
         {/* Generate Caption Button */}
         <Button
-          onClick={() => onGenerateCaption(selectedModel === "advanced" && includeHashtags)}
+          onClick={() => onGenerateCaption(isAuthenticated && selectedModel === "advanced" && includeHashtags)}
           disabled={!imageUploaded || isGenerating}
           className="mt-4"
         >
