@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Now make the login request with the CSRF token
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'hhttps://image-caption-generator-1wpc.onrender.com'}/auth/login/`, 
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/auth/login/`, 
         {
           method: 'POST',
           headers: { 
