@@ -8,5 +8,5 @@ from rest_framework.permissions import AllowAny
 @permission_classes([AllowAny])
 def social_auth_redirect(request):
     """Redirect user to frontend after social authentication"""
-    frontend_url = settings.LOGIN_REDIRECT_URL or 'http://localhost:3000/auth/success'
+    frontend_url = settings.LOGIN_REDIRECT_URL or 'https://captionit-gray.vercel.app/auth/success'
     return redirect(frontend_url)
