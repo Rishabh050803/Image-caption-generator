@@ -32,5 +32,5 @@ flake8>=6.1.0  # Linter
 # Run 'yarn install' in the frontend directory
 
 # Production (uncomment when deploying)
-# gunicorn>=21.2.0  # WSGI server
-# whitenoise>=6.5.0  # Static files
+gunicorn>=21.2.0  # WSGI server
+whitenoise>=6.5.0  # Static files
