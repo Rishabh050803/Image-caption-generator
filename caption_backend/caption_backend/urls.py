@@ -6,7 +6,7 @@ from api.views import social_auth_redirect
 
 urlpatterns = [
     # Redirect root to frontend
-    path('', RedirectView.as_view(url='http://localhost:3000'), name='index'),
+    path('', RedirectView.as_view(url='https://captionit-gray.vercel.app/'), name='index'),
     
     # Admin and API
     path('admin/', admin.site.urls),

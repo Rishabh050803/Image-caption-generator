@@ -136,7 +136,7 @@ def get_csrf_token(request):
 @permission_classes([AllowAny])
 def social_auth_redirect(request):
     """Redirect user to frontend after social authentication"""
-    frontend_url = getattr(settings, 'LOGIN_REDIRECT_URL', 'http://localhost:3000/auth/success')
+    frontend_url = getattr(settings, 'LOGIN_REDIRECT_URL', 'https://captionit-gray.vercel.app/auth/success')
     return redirect(frontend_url)
 
 @api_view(['POST'])
