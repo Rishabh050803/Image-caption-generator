@@ -19,8 +19,7 @@ load_dotenv(dotenv_path=BASE_DIR / ".env")
 # SECURITY WARNING: keep the secret key used in production secret!
 DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "t")
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key")
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
-
+ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
