@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
   const checkAuth = async (): Promise<boolean> => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/status/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/api/auth/status/`, {
         credentials: 'include',
       })
       
@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // First, get a CSRF token
       const csrfResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/csrf-token/`, 
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/api/csrf-token/`, 
         { credentials: 'include' }
       )
       
@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Now make the login request with the CSRF token
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/login/`, 
+        `${process.env.NEXT_PUBLIC_API_URL || 'hhttps://image-caption-generator-1wpc.onrender.com'}/auth/login/`, 
         {
           method: 'POST',
           headers: { 
@@ -132,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // First, get a CSRF token
       const csrfResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/csrf-token/`, 
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/api/csrf-token/`, 
         { credentials: 'include' }
       );
       
@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Call our custom logout endpoint instead of the default one
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/logout/`, 
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/api/auth/logout/`, 
         {
           method: 'POST',
           headers: {
@@ -182,11 +182,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
   
   const loginWithGoogle = () => {
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/accounts/google/login/`
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/accounts/google/login/`
   }
   
   const loginWithGithub = () => {
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/accounts/github/login/`
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/accounts/github/login/`
   }
 
   const register = async (email: string, password1: string, password2: string, firstName: string, lastName: string): Promise<boolean> => {
@@ -194,7 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // First, get a CSRF token
       const csrfResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/csrf-token/`, 
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/api/csrf-token/`, 
         { credentials: 'include' }
       )
       
@@ -213,7 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Make registration request with complete data
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/registration/`, 
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/auth/registration/`, 
         {
           method: 'POST',
           headers: { 

@@ -67,7 +67,7 @@ export default function CaptionRating({
     try {
       // Get CSRF token
       const csrfResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/csrf-token/`, 
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/api/csrf-token/`, 
         { credentials: 'include' }
       )
       
@@ -76,7 +76,7 @@ export default function CaptionRating({
       
       // Submit the rating
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/captions/rate/`, 
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/api/captions/rate/`, 
         {
           method: 'POST',
           headers: { 
