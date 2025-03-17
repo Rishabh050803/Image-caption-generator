@@ -3,6 +3,8 @@
 import { createContext, useContext, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL
+
 interface User {
   id: string
   email: string
@@ -39,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
   const checkAuth = async (): Promise<boolean> => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/api/auth/status/`, {
+      const response = await fetch(`${BACKEND_URL }/api/auth/status/`, {
         credentials: 'include',
       })
       
@@ -84,46 +86,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState({ ...state, isLoading: true, error: null })
     try {
       // First, get a CSRF token
-      const csrfResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/api/csrf-token/`, 
-        { credentials: 'include' }
-      )
+      const csrfResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/csrf-token/`, {
+        method: 'GET',
+        credentials: 'include',
+      });
       
-      const { csrfToken } = await csrfResponse.json()
+      // Get the CSRF token from the response
+      const { csrfToken } = await csrfResponse.json();
       
-      // Now make the login request with the CSRF token
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/auth/login/`, 
-        {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken  // Include the CSRF token here
-          },
-          body: JSON.stringify({ email, password }),
-          credentials: 'include'
-        }
-      )
-      
-      if (response.ok) {
-        await checkAuth()
-        return true
-      } else {
-        const error = await response.json()
-        setState({
-          ...state,
-          isLoading: false,
-          error: error.detail || 'Login failed'
-        })
-        return false
+      // Then make the login request with the token
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Login error:', errorData);
+        throw new Error(errorData.detail || 'Login failed');
       }
+
+      await checkAuth();
+      return true;
     } catch (error) {
+      console.error('Login error:', error);
       setState({
         ...state,
         isLoading: false,
         error: 'Login request failed'
       })
-      return false
+      return false;
     }
   }
   
@@ -132,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // First, get a CSRF token
       const csrfResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/api/csrf-token/`, 
+        `${BACKEND_URL}/api/csrf-token/`, 
         { credentials: 'include' }
       );
       
@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Call our custom logout endpoint instead of the default one
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/api/auth/logout/`, 
+        `${BACKEND_URL }/api/auth/logout/`, 
         {
           method: 'POST',
           headers: {
@@ -182,11 +182,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
   
   const loginWithGoogle = () => {
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/accounts/google/login/`
+    window.location.href = `${BACKEND_URL }/accounts/google/login/`
   }
   
   const loginWithGithub = () => {
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/accounts/github/login/`
+    window.location.href = `${BACKEND_URL }/accounts/github/login/`
   }
 
   const register = async (email: string, password1: string, password2: string, firstName: string, lastName: string): Promise<boolean> => {
@@ -194,7 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // First, get a CSRF token
       const csrfResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/api/csrf-token/`, 
+        `${BACKEND_URL }/api/csrf-token/`, 
         { credentials: 'include' }
       )
       
@@ -213,7 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Make registration request with complete data
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/auth/registration/`, 
+        `${BACKEND_URL }/auth/registration/`, 
         {
           method: 'POST',
           headers: { 

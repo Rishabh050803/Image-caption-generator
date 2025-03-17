@@ -1,12 +1,20 @@
-# caption_backend/urls.py
 from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import RedirectView
+import os
 from api.views import social_auth_redirect
 
+from dotenv import load_dotenv
+from pathlib import Path
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(dotenv_path=BASE_DIR / ".env")
+
+# Get frontend URL: Use .env in dev, use environment variable in production
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")  # Default to local dev
+
 urlpatterns = [
-    # Redirect root to frontend
-    path('', RedirectView.as_view(url='https://captionit-gray.vercel.app/'), name='index'),
+    # Redirect root to frontend (dynamic URL based on environment)
+    path('', RedirectView.as_view(url=FRONTEND_URL), name='index'),
     
     # Admin and API
     path('admin/', admin.site.urls),

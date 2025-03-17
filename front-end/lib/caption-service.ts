@@ -7,6 +7,8 @@ interface CaptionParams {
   prevCaption: string
 }
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL 
+
 
 export async function generateBasicCaption(params: CaptionParams): Promise<string> {
   const res = await fetch(params.image);
@@ -15,7 +17,7 @@ export async function generateBasicCaption(params: CaptionParams): Promise<strin
   const formData = new FormData();
   formData.append("file", blob, "upload.png");
 
-  const response = await fetch("https://image-caption-generator-1wpc.onrender.com/api/generate-caption/", {
+  const response = await fetch(BACKEND_URL+"/api/generate-caption/", {
     method: "POST",
     body: formData,
   });
@@ -57,7 +59,7 @@ export async function generateAdvancedCaption(params: CaptionParams): Promise<st
   });
   
   try {
-    const refineResponse = await fetch("https://image-caption-generator-1wpc.onrender.com/api/refine-caption/", {
+    const refineResponse = await fetch(BACKEND_URL+"/api/refine-caption/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -88,7 +90,7 @@ export async function generateAdvancedCaption(params: CaptionParams): Promise<st
 }
 
 export async function generateHashtags(caption: string): Promise<string[]> {
-  const response = await fetch("https://image-caption-generator-1wpc.onrender.com/api/get-hashtags/", {
+  const response = await fetch(BACKEND_URL+"/api/get-hashtags/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ caption }),
@@ -114,7 +116,7 @@ export async function generateCaption(params: CaptionParams): Promise<string> {
       const formData = new FormData();
       formData.append("file", blob, "upload.png");
       
-      const basicResponse = await fetch("https://image-caption-generator-1wpc.onrender.com/api/generate-caption/", {
+      const basicResponse = await fetch(BACKEND_URL+"/api/generate-caption/", {
         method: "POST",
         body: formData,
       });
@@ -133,7 +135,7 @@ export async function generateCaption(params: CaptionParams): Promise<string> {
       // Step 2: Directly send the basic caption for refinement
       console.log("Step 2: Sending basic caption directly for refinement:", basicCaption);
       
-      const refineResponse = await fetch("https://image-caption-generator-1wpc.onrender.com/api/refine-caption/", {
+      const refineResponse = await fetch(BACKEND_URL+"/api/refine-caption/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -162,7 +164,7 @@ export async function generateCaption(params: CaptionParams): Promise<string> {
       // Step 4: Add hashtags if requested
       if (params.containHashtags) {
         try {
-          const hashtagResponse = await fetch("https://image-caption-generator-1wpc.onrender.com/api/get-hashtags/", {
+          const hashtagResponse = await fetch(BACKEND_URL+"/api/get-hashtags/", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ caption: finalCaption }),
@@ -192,7 +194,7 @@ export async function generateCaption(params: CaptionParams): Promise<string> {
     const formData = new FormData();
     formData.append("file", blob, "upload.png");
     
-    const response = await fetch("https://image-caption-generator-1wpc.onrender.com/api/generate-caption/", {
+    const response = await fetch(BACKEND_URL+"/api/generate-caption/", {
       method: "POST",
       body: formData,
     });
@@ -201,7 +203,7 @@ export async function generateCaption(params: CaptionParams): Promise<string> {
     let caption = data.caption || "";
     
     if (params.containHashtags) {
-      const hashtagResponse = await fetch("https://image-caption-generator-1wpc.onrender.com/api/get-hashtags/", {
+      const hashtagResponse = await fetch(BACKEND_URL+"/api/get-hashtags/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ caption }),

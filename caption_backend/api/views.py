@@ -13,6 +13,14 @@ from .services import caption_with_hf_api, refine_caption_with_groq, generate_ha
 from rest_framework import viewsets, permissions
 from .models import RatedCaption
 from .serializers import RatedCaptionSerializer
+import os
+from dotenv import load_dotenv
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(dotenv_path=BASE_DIR / ".env")
+
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")  # Default to local dev
 
 @api_view(["POST"])
 @parser_classes([MultiPartParser])
@@ -136,7 +144,7 @@ def get_csrf_token(request):
 @permission_classes([AllowAny])
 def social_auth_redirect(request):
     """Redirect user to frontend after social authentication"""
-    frontend_url = getattr(settings, 'LOGIN_REDIRECT_URL', 'https://captionit-gray.vercel.app/auth/success')
+    frontend_url = getattr(settings, 'LOGIN_REDIRECT_URL', f'{FRONTEND_URL}/auth/success')
     return redirect(frontend_url)
 
 @api_view(['POST'])

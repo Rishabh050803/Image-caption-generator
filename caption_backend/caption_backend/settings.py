@@ -123,7 +123,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
-    "*",
+    "https://captionit-gray.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:3001",
 ]
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins in development
 CORS_ALLOW_CREDENTIALS = True
@@ -131,19 +133,21 @@ CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
 
 # CSRF settings
 CSRF_TRUSTED_ORIGINS = [
-    "https://captionit-gray.vercel.app/",
+    "https://captionit-gray.vercel.app",
     "http://localhost:3000",
     "http://localhost:3001",
 ]
-CSRF_COOKIE_SAMESITE = 'None'
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SAMESITE = 'None'
-SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'Lax'  # Use 'Lax' for development, 'None' only for production with HTTPS
+CSRF_COOKIE_SECURE = False    # Set to True ONLY if using HTTPS, which is not typical in dev
+SESSION_COOKIE_SAMESITE = 'Lax'  
+SESSION_COOKIE_SECURE = False  # Set to True ONLY if using HTTPS
 
-# For development only
-if DEBUG:
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
+# For production only (when using HTTPS)
+if not DEBUG:  # In production
+    CSRF_COOKIE_SAMESITE = 'None'
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = 'None'
+    SESSION_COOKIE_SECURE = True
 
 # Site settings
 SITE_ID = int(os.getenv("SITE_ID", 1))
@@ -189,8 +193,7 @@ REST_AUTH_REGISTER_SERIALIZERS = {
 ACCOUNT_EMAIL_VERIFICATION = 'none'  # For simplicity during development
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_LOGIN_METHODS = {'email'}
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_LOGIN_ON_GET = True  # Skip intermediate pages
 SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'

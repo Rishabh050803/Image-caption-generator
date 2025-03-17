@@ -83,7 +83,7 @@ export function HistorySidebar({ onSelectCaption, isOpen, setIsOpen }: HistorySi
     try {
       setIsLoading(true)
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://image-caption-generator-1wpc.onrender.com'}/api/captions/ratings/`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/captions/ratings/`,
         { credentials: 'include' }
       )
       
