@@ -167,3 +167,59 @@ def generate_hashtags(caption: str) -> list:
     response = call_groq_api_with_timeout(prompt)
     print(f"generated hashtags- {response.get('hashtags', [response.get('error', 'Unknown error')])}")
     return response.get("hashtags", [response.get("error", "Unknown error")])
+
+def translate_caption_service(text: str, target_language: str) -> str:
+    """
+    Translate text to the specified target language using Groq API.
+    """
+    if not text or not target_language:
+        return text
+    
+    prompt = (
+        f"Translate the following text accurately to {target_language}. "
+        f"Maintain the same tone and style. Return ONLY the translated text without any formatting, JSON, or additional notes.\n\n"
+        f"Text: '{text}'"
+    )
+    
+    print(f"Requesting translation to {target_language}")
+    
+    response = call_groq_api_with_timeout(prompt)
+    
+    # Process response to extract the actual translated text
+    if isinstance(response, dict):
+        # Check for error
+        if "error" in response:
+            print(f"Translation error: {response.get('error')}")
+            return text
+            
+        # Try different possible field names
+        if "translated_text" in response:
+            return response.get("translated_text")
+        elif "translation" in response:
+            return response.get("translation")
+        elif "refined_caption" in response:
+            return response.get("refined_caption")
+        
+        # If none of the expected fields exist, look for the first string value
+        for val in response.values():
+            if isinstance(val, str):
+                return val
+        
+        # If all else fails, convert the whole response to string
+        return str(response)
+    
+    # If the response is a string but looks like JSON, try to parse it
+    if isinstance(response, str):
+        if response.startswith("{") and "refined_caption" in response:
+            try:
+                import json
+                # Replace single quotes with double quotes for proper JSON parsing
+                json_str = response.replace("'", '"')
+                parsed = json.loads(json_str)
+                if "refined_caption" in parsed:
+                    return parsed["refined_caption"]
+            except:
+                pass
+    
+    # Default fallback, return the response as is
+    return str(response)

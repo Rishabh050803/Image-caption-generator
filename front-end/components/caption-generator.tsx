@@ -7,33 +7,36 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { Loader2, Copy, Edit, Check, Save, Lock } from "lucide-react"
+import { Loader2, Copy, Edit, Check, Save, Lock, Languages } from "lucide-react"
+import { translateCaption } from "@/lib/caption-service"
+import { toast } from "sonner"
 import CaptionRating from "./caption-rating"
 import { useAuth } from "@/lib/auth"
 import { LoginPrompt } from "./login-prompt"
 
 interface CaptionGeneratorProps {
-  caption: string
-  basicCaption:string
-  generatedHashtags:string
-  editedCaption: string
-  setEditedCaption: (caption: string) => void
-  isEditing: boolean
-  setIsEditing: (isEditing: boolean) => void
-  saveEditedCaption: () => void
-  isGenerating: boolean
-  generationStep: "idle" | "basic" | "advanced" | "hashtags"
-  selectedModel: "basic" | "advanced"
-  setSelectedModel: (model: "basic" | "advanced") => void
-  tone: string
-  setTone: (tone: string) => void
-  customPrompt: string
-  setCustomPrompt: (prompt: string) => void
-  onGenerateCaption: (includeHashtags: boolean) => void
-  imageUploaded: boolean
-  uploadedImage: string  // Add this line
-  hashtags: boolean
-  setHashtags: (hashtags: boolean) => void
+  caption: string;
+  basicCaption: string;
+  generatedHashtags: string;
+  editedCaption: string;
+  setEditedCaption: (value: string) => void;
+  isEditing: boolean;
+  setIsEditing: (value: boolean) => void;
+  saveEditedCaption: () => void;
+  isGenerating: boolean;
+  generationStep: "idle" | "basic" | "advanced" | "hashtags";
+  selectedModel: "basic" | "advanced";
+  setSelectedModel: (value: "basic" | "advanced") => void;
+  tone: string;
+  setTone: (value: string) => void;
+  customPrompt: string;
+  setCustomPrompt: (value: string) => void;
+  onGenerateCaption: (containHashtags: boolean) => void;
+  imageUploaded: boolean;
+  uploadedImage: string;
+  hashtags: boolean;
+  setHashtags: (value: boolean) => void;
+  isAuthenticated: boolean; // Add this line to fix the error
 }
 
 export default function CaptionGenerator({
@@ -57,7 +60,8 @@ export default function CaptionGenerator({
   imageUploaded,
   uploadedImage,  // Add this parameter
   hashtags,
-  setHashtags
+  setHashtags,
+  isAuthenticated // Add this parameter
 }: CaptionGeneratorProps) {
   const [copied, setCopied] = useState(false)
   const [captionVisible, setCaptionVisible] = useState(false)
@@ -68,7 +72,7 @@ export default function CaptionGenerator({
   const longWaitTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Get authentication status
-  const { isAuthenticated } = useAuth();
+  // const { isAuthenticated } = useAuth();
 
   // Define loading states for each step
   const loadingStates = [
@@ -190,6 +194,58 @@ export default function CaptionGenerator({
     navigator.clipboard.writeText(caption)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  // New state for translation
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("English")
+  const [isTranslating, setIsTranslating] = useState(false)
+  const [translatedCaption, setTranslatedCaption] = useState<string>("")
+  const [currentTranslatedLanguage, setCurrentTranslatedLanguage] = useState<string>("")
+  const [showTranslation, setShowTranslation] = useState(false)
+  
+  // Available languages
+  const languages = [
+    "English", "Spanish", "French", "German", "Italian", 
+    "Portuguese", "Chinese", "Japanese", "Korean", "Russian",
+    "Arabic", "Hindi", "Dutch", "Swedish", "Polish"
+  ]
+  
+  // Reset translation when caption changes
+  useEffect(() => {
+    setTranslatedCaption("")
+    setCurrentTranslatedLanguage("")
+    setShowTranslation(false)
+  }, [caption])
+  
+  // Handle language change
+  const handleLanguageChange = (language: string) => {
+    setSelectedLanguage(language)
+    // Clear translation if we change language
+    if (language !== currentTranslatedLanguage) {
+      setTranslatedCaption("")
+      setShowTranslation(false)
+    }
+  }
+  
+  // Handle translation
+  const handleTranslate = async () => {
+    if (!caption || selectedLanguage === "English" || selectedLanguage === currentTranslatedLanguage) {
+      return
+    }
+    
+    setIsTranslating(true)
+    
+    try {
+      const translated = await translateCaption(caption, selectedLanguage)
+      setTranslatedCaption(translated)
+      setCurrentTranslatedLanguage(selectedLanguage)
+      setShowTranslation(true)
+      toast.success(`Caption translated to ${selectedLanguage}`)
+    } catch (error) {
+      console.error("Translation failed:", error)
+    } finally {
+      setIsTranslating(false)
+    }
   }
 
   // The caption loading UI component
@@ -445,6 +501,73 @@ export default function CaptionGenerator({
                 </>
               )}
             </div>
+
+            {/* Add Translation Features - Only in Advanced Mode and for Authenticated Users */}
+            {isAuthenticated && selectedModel === "advanced" && caption && !isEditing && !isGenerating && (
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="dark:text-gray-200">Translation</Label>
+                </div>
+                
+                <div className="flex items-center gap-2 mb-3">
+                  <Select
+                    value={selectedLanguage}
+                    onValueChange={handleLanguageChange}
+                    disabled={isTranslating}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select Language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {languages.map((lang) => (
+                        <SelectItem key={lang} value={lang}>
+                          {lang}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTranslate}
+                    disabled={isTranslating || selectedLanguage === "English" || selectedLanguage === currentTranslatedLanguage}
+                  >
+                    {isTranslating ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Translating...
+                      </>
+                    ) : (
+                      <>
+                        <Languages className="mr-2 h-4 w-4" />
+                        Translate
+                      </>
+                    )}
+                  </Button>
+                </div>
+                
+                {showTranslation && translatedCaption && (
+                  <div className="border rounded-md p-3 bg-muted/30 dark:bg-gray-900/50 dark:border-gray-800">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs text-muted-foreground">
+                        Translated to {currentTranslatedLanguage}
+                      </span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => navigator.clipboard.writeText(translatedCaption)}
+                        className="h-6 px-2"
+                      >
+                        <Copy className="h-3 w-3 mr-1" />
+                        <span className="text-xs">Copy</span>
+                      </Button>
+                    </div>
+                    <p className="text-sm dark:text-gray-200">{translatedCaption}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

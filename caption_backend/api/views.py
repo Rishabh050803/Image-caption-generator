@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from django.shortcuts import redirect
 from django.middleware.csrf import get_token
 from django.http import JsonResponse
-from .services import caption_with_hf_api, refine_caption_with_groq, generate_hashtags
+from .services import caption_with_hf_api, refine_caption_with_groq, generate_hashtags,translate_caption_service
 from rest_framework import viewsets, permissions
 from .models import RatedCaption
 from .serializers import RatedCaptionSerializer
@@ -232,3 +232,38 @@ def get_user_ratings(request):
     ratings = RatedCaption.objects.filter(user=request.user)
     serializer = RatedCaptionSerializer(ratings, many=True, context={'request': request})
     return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([AllowAny]) 
+def translate_caption(request):
+    """Translate a caption to another language"""
+    text = request.data.get('text', '')
+    target_language = request.data.get('target_language', '')
+    
+    if not text:
+        return Response({"error": "No text provided"}, status=400)
+    
+    if not target_language:
+        return Response({"error": "No target language specified"}, status=400)
+    
+    # Get the translated text
+    translated_text = translate_caption_service(text, target_language)
+    
+    # Additional cleanup for JSON-looking strings
+    if isinstance(translated_text, str):
+        if translated_text.startswith("{") and "refined_caption" in translated_text:
+            try:
+                import json
+                # Replace single quotes with double quotes for proper JSON parsing
+                json_str = translated_text.replace("'", '"')
+                parsed = json.loads(json_str)
+                if "refined_caption" in parsed:
+                    translated_text = parsed["refined_caption"]
+            except:
+                # Keep the original if parsing fails
+                pass
+    
+    return Response({
+        "translated_text": translated_text,
+        "language": target_language
+    })

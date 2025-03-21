@@ -85,14 +85,65 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'caption_backend.wsgi.application'
 
-# Database
-DATABASES = {
-    'default': dj_database_url.parse(
-        os.getenv("DATABASE_URL"),
-        conn_max_age=600,  # Keep the connection alive
-        ssl_require=True   # Required for NeonDB or similar services
+# Database Configuration with Fallback
+import time
+from django.db.utils import OperationalError
+
+# Try to use the configured database URL first
+database_url = os.getenv("DATABASE_URL")
+
+# If no DATABASE_URL provided, default to SQLite
+if not database_url:
+    print("Warning: No DATABASE_URL environment variable set, defaulting to SQLite")
+    database_url = f"sqlite:///{os.path.join(str(BASE_DIR), 'db.sqlite3')}"
+
+# Configure database with error handling
+try:
+    # Attempt to parse the DATABASE_URL
+    db_config = dj_database_url.parse(
+        database_url,
+        conn_max_age=600,
     )
-}
+    
+    # Only apply SSL settings for PostgreSQL
+    if db_config.get('ENGINE') == 'django.db.backends.postgresql':
+        db_config['OPTIONS'] = {'sslmode': 'require'} if not DEBUG else {}
+        
+        # Test the connection with a short timeout
+        if DEBUG:
+            import psycopg2
+            try:
+                print(f"Testing connection to PostgreSQL at {db_config.get('HOST')}...")
+                conn = psycopg2.connect(
+                    dbname=db_config.get('NAME', ''),
+                    user=db_config.get('USER', ''),
+                    password=db_config.get('PASSWORD', ''),
+                    host=db_config.get('HOST', ''),
+                    port=db_config.get('PORT', 5432),
+                    connect_timeout=5  # 5 second timeout for quick failure
+                )
+                conn.close()
+                print("PostgreSQL connection successful")
+            except (psycopg2.OperationalError, Exception) as e:
+                print(f"PostgreSQL connection failed: {e}")
+                print("Falling back to SQLite for local development")
+                # Fall back to SQLite
+                db_config = {
+                    'ENGINE': 'django.db.backends.sqlite3',
+                    'NAME': os.path.join(str(BASE_DIR), 'db.sqlite3'),
+                }
+    
+    # Set the database configuration
+    DATABASES = {'default': db_config}
+except Exception as e:
+    print(f"Error configuring database: {e}")
+    print("Falling back to SQLite")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(str(BASE_DIR), 'db.sqlite3'),
+        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -130,7 +181,7 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins in development
 CORS_ALLOW_CREDENTIALS = True
 CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
-
+CORS_ALLOW_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 # CSRF settings
 CSRF_TRUSTED_ORIGINS = [
     "https://captionit-gray.vercel.app",

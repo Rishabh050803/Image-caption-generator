@@ -533,6 +533,7 @@ export default function Home() {
                   uploadedImage={uploadedImage || ""}
                   hashtags={hashtags}
                   setHashtags={setHashtags} 
+                  isAuthenticated={isAuthenticated} // Add this prop
                 />
               </div>
             </div>
