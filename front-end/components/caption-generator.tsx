@@ -319,7 +319,13 @@ export default function CaptionGenerator({
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="generate" className="space-y-4 flex-1 mt-0 flex flex-col overflow-hidden">
+          <TabsContent
+            value="generate"
+            className={`space-y-4 flex-1 mt-0 flex flex-col ${
+              activeTab === "generate" ? "block" : "hidden"
+            }`}
+          >
+            {/* Content for the Generate tab */}
             <div className="flex-1 flex flex-col overflow-hidden">
               {/* Model Selection */}
               <div className="glass p-4 rounded-lg space-y-2">
@@ -568,7 +574,13 @@ export default function CaptionGenerator({
             </Button>
           </TabsContent>
           
-          <TabsContent value="translate" className="space-y-6 flex-1 mt-0">
+          <TabsContent
+            value="translate"
+            className={`space-y-6 flex-1 mt-0 ${
+              activeTab === "translate" ? "block" : "hidden"
+            }`}
+          >
+            {/* Content for the Translate tab */}
             <div className="glass p-4 rounded-lg space-y-4">
               <div className="flex items-center justify-between">
                 <div>
