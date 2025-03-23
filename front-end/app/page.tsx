@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import ImageUpload from "@/components/image-upload"
 import CaptionGenerator from "@/components/caption-generator"
 import TeamSection from "@/components/team-section"
 import { generateBasicCaption, generateAdvancedCaption, generateHashtags } from "@/lib/caption-service"
 import { Button } from "@/components/ui/button"
-import { Moon, Sun, Github, Menu, AlertCircle, WifiOff, Clock, LogIn } from "lucide-react"
+import { Moon, Sun, Github, Menu, AlertCircle, WifiOff, Clock, LogIn, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { BackgroundBeams } from "@/components/ui/background-beams"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -34,6 +34,7 @@ interface RatedCaption {
 
 export default function Home() {
   const { isAuthenticated } = useAuth()
+  const mainContentRef = useRef<HTMLDivElement>(null)
   
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [caption, setCaption] = useState<string>("")
@@ -390,11 +391,23 @@ export default function Home() {
     );
   };
 
+  // Scroll to caption generator when image is uploaded
+  useEffect(() => {
+    if (uploadedImage && mainContentRef.current) {
+      setTimeout(() => {
+        mainContentRef.current?.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'center'
+        })
+      }, 300)
+    }
+  }, [uploadedImage])
+
   return (
     <AuthWrapper>
-      <div className={`min-h-screen transition-colors relative ${isDarkMode ? "dark bg-black text-white" : "bg-white"}`}>
-        {/* Unified background for the entire page */}
-        <div className="absolute inset-0 w-full h-full overflow-hidden">
+      <div className={`min-h-screen transition-colors duration-500 relative ${isDarkMode ? "dark bg-black text-white" : "bg-gradient-to-br from-gray-50 to-gray-100"}`}>
+        {/* Animated background */}
+        <div className="absolute inset-0 w-full h-full overflow-hidden opacity-80 dark:opacity-30">
           <BackgroundBeams className="h-full w-full" />
         </div>
 
@@ -405,25 +418,31 @@ export default function Home() {
           setIsOpen={setIsSidebarOpen}
         />
 
-        {/* Main Content - Adjust padding to accommodate sidebar */}
-        <div className={`relative z-10 transition-all duration-300 ${isSidebarOpen ? "md:ml-80" : "md:ml-16"}`}>
-          <div className="container mx-auto py-12 px-4">
+        {/* Main Content */}
+        <div className={`relative z-10 transition-all duration-300 ${isSidebarOpen ? "md:ml-80" : isAuthenticated ? "md:ml-16" : "md:ml-0"}`}>
+          <div className="container max-w-6xl mx-auto py-8 px-4">
             {/* Header with Title + Buttons */}
-            <div className="flex justify-between items-center mb-12">
+            <header className="flex justify-between items-center mb-12 sticky top-0 z-50 py-4 px-6 glass rounded-2xl">
               <div className="flex items-center">
                 {isAuthenticated && (
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="mr-2 md:hidden" 
+                    className="mr-2 md:hidden hover:bg-white/20 dark:hover:bg-black/20 transition-colors" 
                     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                   >
                     <Menu className="h-5 w-5" />
                   </Button>
                 )}
-                <h1 className="text-3xl font-bold text-center">Image Caption Generator</h1>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-7 w-7 text-primary animate-pulse" />
+                  <h1 className="text-2xl font-bold md:text-3xl bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400">
+                    Image Caption Generator
+                  </h1>
+                </div>
               </div>
-              <div className="flex items-center gap-4">
+              
+              <div className="flex items-center gap-3">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -431,21 +450,26 @@ export default function Home() {
                         href={GITHUB_REPO_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center"
+                        className="inline-flex items-center justify-center hover:scale-110 transition-transform"
                       >
-                        <Button variant="outline" size="icon" className="rounded-full">
+                        <Button variant="outline" size="icon" className="rounded-full hover:bg-white/20 dark:hover:bg-black/20">
                           <Github className="h-5 w-5" />
                           <span className="sr-only">GitHub Repository</span>
                         </Button>
                       </Link>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>See Project Repo</p>
+                      <p>View on GitHub</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
 
-                <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={toggleDarkMode} 
+                  className="rounded-full hover:scale-110 transition-transform hover:bg-white/20 dark:hover:bg-black/20"
+                >
                   {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                 </Button>
                 
@@ -453,7 +477,7 @@ export default function Home() {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <LogoutButton />
+                        <LogoutButton className="hover:scale-110 transition-transform" />
                       </TooltipTrigger>
                       <TooltipContent>
                         <p>Logout</p>
@@ -461,42 +485,39 @@ export default function Home() {
                     </Tooltip>
                   </TooltipProvider>
                 ) : (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Link href="/login">
-                          <Button variant="outline" size="icon" className="rounded-full">
-                            <LogIn className="h-5 w-5" />
-                            <span className="sr-only">Login</span>
-                          </Button>
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Login</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <Link href="/login">
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      className="hover:scale-105 transition-transform"
+                    >
+                      <LogIn className="h-4 w-4 mr-2" />
+                      Login
+                    </Button>
+                  </Link>
                 )}
               </div>
-            </div>
+            </header>
 
             {/* Error display area */}
             <ErrorMessage />
 
             {/* Welcome message for non-authenticated users */}
-            {!isAuthenticated && (
-              <div className="mb-8 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
-                <h2 className="text-lg font-semibold mb-2">Welcome to Image Caption Generator</h2>
-                <p className="mb-4">
-                  You can use basic caption generation without an account. Sign up to access advanced features, 
-                  including custom tones, personalized instructions, hashtags, and caption history!
+            {!isAuthenticated && !uploadedImage && (
+              <div className="fade-in mb-8 p-6 glass rounded-xl border border-primary/10 border-opacity-20 shadow-lg">
+                <h2 className="text-xl font-semibold mb-3 flex items-center">
+                  <Sparkles className="h-5 w-5 mr-2 text-primary" />
+                  Welcome to Image Caption Generator
+                </h2>
+                <p className="mb-4 text-muted-foreground">
+                  Generate engaging captions for your images instantly! Sign up to access advanced features including custom tones, personalized instructions, hashtags, and caption history.
                 </p>
                 <div className="flex gap-3">
                   <Link href="/login">
-                    <Button variant="outline" size="sm">Log In</Button>
+                    <Button variant="outline" size="sm" className="hover:scale-105 transition-transform">Log In</Button>
                   </Link>
                   <Link href="/register">
-                    <Button size="sm">Sign Up</Button>
+                    <Button size="sm" className="hover:scale-105 transition-transform">Sign Up</Button>
                   </Link>
                 </div>
               </div>
@@ -504,43 +525,67 @@ export default function Home() {
 
             {/* Main Grid: Left=Image Upload, Right=Caption */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
-              <div className="flex flex-col">
-                <h2 className="text-xl font-semibold mb-4">Image Upload</h2>
-                <ImageUpload onImageUpload={handleImageUpload} uploadedImage={uploadedImage} />
+              <div className="slide-up flex flex-col space-y-4">
+                <h2 className="text-xl font-semibold mb-2 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <path d="M21 15l-5-5L5 21" />
+                  </svg>
+                  Image Upload
+                </h2>
+                <div className="glass rounded-xl overflow-hidden border-opacity-20 shadow-lg hover-lift">
+                  <ImageUpload onImageUpload={handleImageUpload} uploadedImage={uploadedImage} />
+                </div>
               </div>
 
-              <div className="flex flex-col">
-                <h2 className="text-xl font-semibold mb-4">Caption Generator</h2>
-                <CaptionGenerator
-                  caption={caption}
-                  basicCaption={basicCaption}
-                  generatedHashtags={generatedHashtags}
-                  editedCaption={editedCaption}
-                  setEditedCaption={setEditedCaption}
-                  isEditing={isEditing}
-                  setIsEditing={setIsEditing}
-                  saveEditedCaption={saveEditedCaption}
-                  isGenerating={isGenerating}
-                  generationStep={generationStep}
-                  selectedModel={selectedModel}
-                  setSelectedModel={setSelectedModel}
-                  tone={tone}
-                  setTone={setTone}
-                  customPrompt={customPrompt}
-                  setCustomPrompt={setCustomPrompt}
-                  onGenerateCaption={handleGenerateCaption}
-                  imageUploaded={!!uploadedImage}
-                  uploadedImage={uploadedImage || ""}
-                  hashtags={hashtags}
-                  setHashtags={setHashtags} 
-                  isAuthenticated={isAuthenticated} // Add this prop
-                />
+              <div ref={mainContentRef} className="slide-up flex flex-col space-y-4">
+                <h2 className="text-xl font-semibold mb-2 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                  Caption Generator
+                </h2>
+                <div className="glass rounded-xl overflow-hidden border-opacity-20 shadow-lg hover-lift h-full">
+                  <CaptionGenerator
+                    caption={caption}
+                    basicCaption={basicCaption}
+                    generatedHashtags={generatedHashtags}
+                    editedCaption={editedCaption}
+                    setEditedCaption={setEditedCaption}
+                    isEditing={isEditing}
+                    setIsEditing={setIsEditing}
+                    saveEditedCaption={saveEditedCaption}
+                    isGenerating={isGenerating}
+                    generationStep={generationStep}
+                    selectedModel={selectedModel}
+                    setSelectedModel={setSelectedModel}
+                    tone={tone}
+                    setTone={setTone}
+                    customPrompt={customPrompt}
+                    setCustomPrompt={setCustomPrompt}
+                    onGenerateCaption={handleGenerateCaption}
+                    imageUploaded={!!uploadedImage}
+                    uploadedImage={uploadedImage || ""}
+                    hashtags={hashtags}
+                    setHashtags={setHashtags} 
+                    isAuthenticated={isAuthenticated}
+                  />
+                </div>
               </div>
             </div>
 
             {/* Team section with visual separator but same background */}
-            <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
-              <h2 className="text-2xl font-bold text-center mb-8">Our Team</h2>
+            <div className="pt-12 border-t border-gray-200 dark:border-gray-800 mt-12">
+              <h2 className="text-2xl font-bold text-center mb-10 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 mr-2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                Our Team
+              </h2>
               <TeamSection />
             </div>
           </div>
