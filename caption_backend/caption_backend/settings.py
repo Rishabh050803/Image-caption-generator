@@ -85,63 +85,57 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'caption_backend.wsgi.application'
 
-# Database Configuration with Fallback
 import time
-from django.db.utils import OperationalError
+import sqlite3
 
-# Try to use the configured database URL first
-database_url = os.getenv("DATABASE_URL")
-
-# If no DATABASE_URL provided, default to SQLite
-if not database_url:
-    print("Warning: No DATABASE_URL environment variable set, defaulting to SQLite")
-    database_url = f"sqlite:///{os.path.join(str(BASE_DIR), 'db.sqlite3')}"
-
-# Configure database with error handling
+# Database configuration with improved connection and fallback
 try:
-    # Attempt to parse the DATABASE_URL
-    db_config = dj_database_url.parse(
-        database_url,
-        conn_max_age=600,
-    )
+    # Parse the DATABASE_URL manually
+    from urllib.parse import urlparse
     
-    # Only apply SSL settings for PostgreSQL
-    if db_config.get('ENGINE') == 'django.db.backends.postgresql':
-        db_config['OPTIONS'] = {'sslmode': 'require'} if not DEBUG else {}
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        raise ValueError("DATABASE_URL environment variable is not set")
         
-        # Test the connection with a short timeout
-        if DEBUG:
-            import psycopg2
-            try:
-                print(f"Testing connection to PostgreSQL at {db_config.get('HOST')}...")
-                conn = psycopg2.connect(
-                    dbname=db_config.get('NAME', ''),
-                    user=db_config.get('USER', ''),
-                    password=db_config.get('PASSWORD', ''),
-                    host=db_config.get('HOST', ''),
-                    port=db_config.get('PORT', 5432),
-                    connect_timeout=5  # 5 second timeout for quick failure
-                )
-                conn.close()
-                print("PostgreSQL connection successful")
-            except (psycopg2.OperationalError, Exception) as e:
-                print(f"PostgreSQL connection failed: {e}")
-                print("Falling back to SQLite for local development")
-                # Fall back to SQLite
-                db_config = {
-                    'ENGINE': 'django.db.backends.sqlite3',
-                    'NAME': os.path.join(str(BASE_DIR), 'db.sqlite3'),
-                }
+    tmpPostgres = urlparse(db_url)
     
-    # Set the database configuration
-    DATABASES = {'default': db_config}
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': tmpPostgres.path.replace('/', ''),
+            'USER': tmpPostgres.username,
+            'PASSWORD': tmpPostgres.password,
+            'HOST': tmpPostgres.hostname,
+            'PORT': tmpPostgres.port or '5432',
+            'OPTIONS': {
+                'sslmode': 'require',
+            },
+        }
+    }
+    
+    # Test the connection
+    import psycopg2
+    conn = psycopg2.connect(
+        dbname=tmpPostgres.path.replace('/', ''),
+        user=tmpPostgres.username,
+        password=tmpPostgres.password,
+        host=tmpPostgres.hostname,
+        port=tmpPostgres.port or '5432',
+        sslmode='require'
+    )
+    conn.close()
+    
+    print("Successfully connected to PostgreSQL database")
+    
 except Exception as e:
-    print(f"Error configuring database: {e}")
-    print("Falling back to SQLite")
+    print(f"PostgreSQL connection failed: {e}")
+    print("Falling back to SQLite database for local development")
+    
+    # Fall back to SQLite
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(str(BASE_DIR), 'db.sqlite3'),
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 

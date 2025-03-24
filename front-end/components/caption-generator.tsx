@@ -136,7 +136,7 @@ export default function CaptionGenerator({
           clearInterval(interval)
           return prev
         })
-      }, 1500)
+      },2000)
 
       return () => clearInterval(interval)
     }
