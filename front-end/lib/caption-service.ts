@@ -221,7 +221,7 @@ export async function generateCaption(params: CaptionParams): Promise<string> {
 
 export async function translateCaption(text: string, targetLanguage: string): Promise<string> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/translate-caption/`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/translate-caption/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

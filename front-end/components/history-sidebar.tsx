@@ -108,7 +108,7 @@ export function HistorySidebar({ onSelectCaption, isOpen, setIsOpen }: HistorySi
     try {
       setIsLoading(true)
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/captions/ratings/`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/captions/ratings/`,
         { credentials: 'include' }
       )
       
