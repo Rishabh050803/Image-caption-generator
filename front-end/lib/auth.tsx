@@ -3,7 +3,6 @@
 import { createContext, useContext, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { getGoogleAuthUrl,getGithubAuthUrl } from "./api"
-
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL
 
 interface User {
