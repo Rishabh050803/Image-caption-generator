@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-
+import { getGoogleAuthUrl,getGithubAuthUrl } from "./api"
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL
 
 interface User {
@@ -182,12 +182,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
   
   const loginWithGoogle = () => {
-    window.location.href = `${BACKEND_URL }/accounts/google/login/`
-  }
-  
+    window.location.href = getGoogleAuthUrl();
+  };
+
   const loginWithGithub = () => {
-    window.location.href = `${BACKEND_URL }/accounts/github/login/`
-  }
+    window.location.href = getGithubAuthUrl();
+  };
 
   const register = async (email: string, password1: string, password2: string, firstName: string, lastName: string): Promise<boolean> => {
     setState({ ...state, isLoading: true, error: null })
