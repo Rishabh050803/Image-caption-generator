@@ -1,3 +1,5 @@
+import { toast } from "sonner";
+
 interface CaptionParams {
   image: string
   model: "basic" | "advanced"
@@ -214,5 +216,46 @@ export async function generateCaption(params: CaptionParams): Promise<string> {
     }
     
     return caption;
+  }
+}
+
+export async function translateCaption(text: string, targetLanguage: string): Promise<string> {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/translate-caption/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text,
+        target_language: targetLanguage,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // Get the translated text from the response
+    let translated = data.translated_text;
+    
+    // Extra check in case we still have a JSON string
+    if (typeof translated === 'string' && translated.startsWith('{') && translated.includes('refined_caption')) {
+      try {
+        const parsedJson = JSON.parse(translated.replace(/'/g, '"'));
+        if (parsedJson.refined_caption) {
+          translated = parsedJson.refined_caption;
+        }
+      } catch (e) {
+        console.warn('Failed to parse JSON in translation:', e);
+      }
+    }
+    
+    return translated;
+  } catch (error) {
+    console.error("Translation error:", error);
+    throw error;
   }
 }

@@ -3,10 +3,13 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # Existing paths
+    path('generate-caption/', views.generate_caption, name='generate-caption'),
+    path('get-hashtags/', views.get_hashtags, name='get-hashtags'),
+    path('translate-caption/', views.translate_caption, name='translate-caption'),
+    
     # Your existing views
-    path('generate-caption/', views.generate_caption, name='generate_caption'),
     path('refine-caption/', views.refine_caption, name='refine_caption'),
-    path('get-hashtags/', views.get_hashtags, name='get_hashtags'),
     
     # Auth views
     path('csrf-token/', views.get_csrf_token, name='csrf_token'),
