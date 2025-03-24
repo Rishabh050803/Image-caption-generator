@@ -85,14 +85,59 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'caption_backend.wsgi.application'
 
-# Database
-DATABASES = {
-    'default': dj_database_url.parse(
-        os.getenv("DATABASE_URL"),
-        conn_max_age=600,  # Keep the connection alive
-        ssl_require=True   # Required for NeonDB or similar services
+import time
+import sqlite3
+
+# Database configuration with improved connection and fallback
+try:
+    # Parse the DATABASE_URL manually
+    from urllib.parse import urlparse
+    
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        raise ValueError("DATABASE_URL environment variable is not set")
+        
+    tmpPostgres = urlparse(db_url)
+    
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': tmpPostgres.path.replace('/', ''),
+            'USER': tmpPostgres.username,
+            'PASSWORD': tmpPostgres.password,
+            'HOST': tmpPostgres.hostname,
+            'PORT': tmpPostgres.port or '5432',
+            'OPTIONS': {
+                'sslmode': 'require',
+            },
+        }
+    }
+    
+    # Test the connection
+    import psycopg2
+    conn = psycopg2.connect(
+        dbname=tmpPostgres.path.replace('/', ''),
+        user=tmpPostgres.username,
+        password=tmpPostgres.password,
+        host=tmpPostgres.hostname,
+        port=tmpPostgres.port or '5432',
+        sslmode='require'
     )
-}
+    conn.close()
+    
+    print("Successfully connected to PostgreSQL database")
+    
+except Exception as e:
+    print(f"PostgreSQL connection failed: {e}")
+    print("Falling back to SQLite database for local development")
+    
+    # Fall back to SQLite
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -130,7 +175,7 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins in development
 CORS_ALLOW_CREDENTIALS = True
 CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
-
+CORS_ALLOW_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 # CSRF settings
 CSRF_TRUSTED_ORIGINS = [
     "https://captionit-gray.vercel.app",

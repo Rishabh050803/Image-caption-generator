@@ -5,6 +5,7 @@ import { Star, Check } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface CaptionRatingProps {
   image: string                // The base64 image
@@ -50,7 +51,7 @@ export default function CaptionRating({
           onMouseLeave={() => setHoveredRating(null)}
           disabled={isSubmitting || isSubmitted}
         >
-          <Star className="w-8 h-8" />
+          <Star className="w-5 h-5 md:w-6 md:h-6" />
         </button>
       )
     }
@@ -116,66 +117,60 @@ export default function CaptionRating({
     }
   }
   
-  // Show thank you message after successful submission
-  if (isSubmitted) {
-    return (
-      <div className="w-full flex flex-col items-center gap-4 mt-6 border-t pt-4">
-        <div className="w-full max-w-md bg-green-50 dark:bg-green-900/30 p-6 rounded-lg shadow-sm">
-          <div className="flex items-center justify-center mb-4">
-            <div className="bg-green-100 dark:bg-green-800 p-2 rounded-full">
-              <Check className="h-8 w-8 text-green-600 dark:text-green-300" />
-            </div>
-          </div>
-          <h3 className="text-xl font-medium text-center text-green-700 dark:text-green-300">
-            Thanks for your feedback!
-          </h3>
-          <p className="text-center text-green-600 dark:text-green-400 mt-2">
-            Your rating helps us improve our caption generation.
-          </p>
-          <div className="flex justify-center mt-4">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setRating(null)
-                setIsSubmitted(false)
-              }}
-            >
-              Rate Again
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-  
   if (!caption) return null
   
   return (
-    <div className="w-full flex flex-col items-center gap-4 mt-6 border-t pt-4">
-      <h3 className="text-lg font-medium text-center">How would you rate this caption?</h3>
-      
-      <div className="flex items-center gap-1">
-        {displayStars()}
-      </div>
-      
-      {isSubmitting && (
-        <div className="w-full max-w-xs mt-2">
-          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-            <div 
-              className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
-              style={{ width: `${submitProgress}%` }}
-            ></div>
+    <AnimatePresence mode="wait">
+      {isSubmitted ? (
+        <motion.div 
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          className="w-full mt-2"
+        >
+          <div className="flex items-center gap-2 text-green-600 dark:text-green-400 py-1">
+            <div className="bg-green-100 dark:bg-green-800/40 p-1 rounded-full">
+              <Check className="h-4 w-4" />
+            </div>
+            <span className="text-sm font-medium">Thanks for your feedback!</span>
           </div>
-        </div>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="w-full flex justify-between items-center py-1"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Rate: </span>
+            <div className="flex items-center">
+              {displayStars()}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {isSubmitting && (
+              <div className="w-16 h-1.5 bg-gray-200 rounded-full dark:bg-gray-700 overflow-hidden">
+                <div 
+                  className="bg-primary h-full rounded-full transition-all duration-300" 
+                  style={{ width: `${submitProgress}%` }}
+                ></div>
+              </div>
+            )}
+            
+            <Button 
+              onClick={submitRating} 
+              disabled={!rating || isSubmitting}
+              size="sm"
+              variant="outline"
+              className="h-8"
+            >
+              {isSubmitting ? "Submitting..." : "Submit"}
+            </Button>
+          </div>
+        </motion.div>
       )}
-      
-      <Button 
-        onClick={submitRating} 
-        disabled={!rating || isSubmitting}
-        className="mt-2"
-      >
-        {isSubmitting ? "Submitting..." : "Submit Rating"}
-      </Button>
-    </div>
+    </AnimatePresence>
   )
 }

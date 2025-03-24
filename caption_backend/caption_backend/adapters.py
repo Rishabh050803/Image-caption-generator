@@ -1,4 +1,5 @@
 import logging
+import requests
 from django.conf import settings
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
@@ -24,6 +25,17 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
             
         # Get the email from the social account
         email = sociallogin.account.extra_data.get('email')
+        
+        # Special handling for GitHub when email is not provided
+        if not email and sociallogin.account.provider == 'github':
+            logger.info("GitHub account without email in profile data, attempting to fetch emails")
+            email = self._get_github_email(sociallogin)
+            
+            # If we found an email, add it to extra_data for future use
+            if email:
+                logger.info(f"Found GitHub email via API: {email}")
+                sociallogin.account.extra_data['email'] = email
+        
         if not email:
             logger.warning(f"Social login without email address for provider {sociallogin.account.provider}")
             return
@@ -59,15 +71,65 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
             logger.info(f"No existing user found with email {email}, proceeding with normal signup")
         except Exception as e:
             logger.error(f"Error during social account auto-connection: {str(e)}")
-
+    
+    def _get_github_email(self, sociallogin):
+        """
+        Fetch the user's email from GitHub API using the access token
+        """
+        try:
+            # Get access token from the account
+            token = sociallogin.token.token
+            
+            # Make request to GitHub API
+            headers = {
+                'Authorization': f'token {token}',
+                'Accept': 'application/vnd.github.v3+json'
+            }
+            response = requests.get('https://api.github.com/user/emails', headers=headers)
+            
+            if response.status_code == 200:
+                emails = response.json()
+                
+                # Filter for verified primary email
+                for email_data in emails:
+                    if email_data.get('primary') and email_data.get('verified'):
+                        return email_data.get('email')
+                
+                # If no primary+verified email, use first verified email
+                for email_data in emails:
+                    if email_data.get('verified'):
+                        return email_data.get('email')
+                        
+                # Last resort: just use the first email
+                if emails and len(emails) > 0:
+                    return emails[0].get('email')
+            
+            # Log the error if API call failed
+            if response.status_code != 200:
+                logger.error(f"GitHub API email fetch failed: {response.status_code} - {response.text}")
+                
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error fetching GitHub email: {str(e)}")
+            return None
+            
     def get_login_redirect_url(self, request, sociallogin=None):
         logger.info(f"Social login redirect to: {settings.LOGIN_REDIRECT_URL}")
         return settings.LOGIN_REDIRECT_URL
-    
+        
     def save_user(self, request, sociallogin, form=None):
         """
         Save user from social account with name information
         """
+        # First check if we need to get the email from GitHub
+        if sociallogin.account.provider == 'github' and not sociallogin.account.extra_data.get('email'):
+            email = self._get_github_email(sociallogin)
+            if email:
+                sociallogin.account.extra_data['email'] = email
+                sociallogin.email_addresses = [email]
+                logger.info(f"Added GitHub email to user: {email}")
+        
         user = super().save_user(request, sociallogin, form)
         logger.info(f"Social login user saved: {user.email}")
         
