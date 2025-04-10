@@ -1,15 +1,21 @@
-FROM node:18.18-alpine 
+# front-end/Dockerfile
+FROM node:18.18-alpine
 
+# set working directory
 WORKDIR /app
 
-COPY front-end/package.json front-end/package-lock.json /app/
-
-
+# copy package manifests, install deps
+COPY package.json package-lock.json /app/
 RUN npm install
-COPY front-end/ /app/
 
+# copy the rest of the frontend code
+COPY . /app/
+
+# build the Next.js app
 RUN npm run build
 
+# expose Next.js port
 EXPOSE 3000
 
-CMD [ "npm","start" ]
+# start the production server
+CMD ["npm", "start"]
