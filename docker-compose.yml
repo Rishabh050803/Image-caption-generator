@@ -1,0 +1,26 @@
+services:
+  backend:
+    build: 
+      context: .
+      dockerfile: caption_backend/Dockerfile
+    container_name: caption_backend
+    volumes:
+      - ./caption_backend:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./caption_backend/.env
+
+  frontend:
+    build:
+      context: .
+      dockerfile: front-end/Dockerfile
+    container_name: caption_frontend
+    ports: 
+      - "3000:3000"
+    depends_on:
+      - backend
+    env_file:
+      - ./front-end/.env.local
+
+

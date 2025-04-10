@@ -33,8 +33,63 @@ A full-stack AI-powered solution for generating social media captions from image
 | JWT | Authentication |
 | Django-allauth | Social Login |
 
-## Setup Guide 🚀
+---
 
+# Setup Guide 🚀
+
+## 🐳 Run with Docker (Recommended)
+
+### Prerequisites
+- Docker
+- Docker Compose v2+
+
+### Steps
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Rishabh050803/Image-caption-generator.git
+   cd Image-caption-generator
+   ```
+
+2. **Create environment files**
+   * Copy example environment files and update values if needed.
+   ```bash
+   cp caption_backend/.env.example caption_backend/.env
+   cp front-end/.env.example front-end/.env.local
+
+   ```
+
+3. **Update environment variables**
+   * Open `caption_backend/.env` and `front-end/.env.local` and set:
+   ```bash
+   # caption_backend/.env
+   DEBUG=1
+   SECRET_KEY=your_secret_key
+   DB_NAME=postgres
+   DB_USER=postgres
+   DB_PASSWORD=postgres
+   DB_HOST=db
+   DB_PORT=5432
+
+   # front-end/.env.local
+   NEXT_PUBLIC_API_URL=http://localhost:8000 # for local machine
+   ```
+
+4. **Build and run everything**
+   ```bash
+   docker compose up --build
+   ```
+
+5. **Access the app**
+   * **Backend API**: http://localhost:8000
+
+   * **Frontend**: http://localhost:3000
+
+   *  **Admin panel**: http://localhost:8000/admin
+
+
+
+## 🛠️ Manual Setup Guide (Alternative)
 ### Prerequisites
 - Python 3.9+
 - Node.js 18+
