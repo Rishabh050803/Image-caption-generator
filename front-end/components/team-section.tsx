@@ -24,22 +24,22 @@ const teamMembers: TeamMember[] = [
   {
     name: "Rishabh K. Patel",
     role: "Lead Developer",
-    bio: "Full-stack developer with expertise in React, Next.js, and AI integration.",
+    bio: "Backend developer with a passion for AI and machine learning.",
     github: "https://github.com/Rishabh050803",
     linkedin: "https://linkedin.com/in/rishabhpatel",
     twitter: "https://twitter.com/rishabhp",
     website: "https://rishabh-portfolio.com",
     avatar: "/rkp.png",
-    skills: ["React", "Next.js", "TypeScript", "Django", "AI Integration"]
+    skills: ["AI/ML", "Next.js", "Python", "Django"]
   },
   {
     name: "Divyansh Pokharna",
-    role: "ML Engineer",
-    bio: "Machine learning specialist focusing on computer vision and natural language processing.",
+    role: "Backend Engineer",
+    bio: "Backend engineer specializing in building robust APIs.",
     github: "https://github.com/Divy190905",
     linkedin: "https://linkedin.com/in/divyanshp",
     avatar: "/divyansh.png",
-    skills: ["Python", "TensorFlow", "Computer Vision", "NLP", "LLMs"]
+    skills: ["Python", "Django", "NLP", "LLMs"]
   },
   {
     name: "Dhruv Parashar",
