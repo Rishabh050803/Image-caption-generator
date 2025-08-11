@@ -30,7 +30,7 @@ const teamMembers: TeamMember[] = [
     twitter: "https://twitter.com/rishabhp",
     website: "https://rishabh-portfolio.com",
     avatar: "/rkp.png",
-    skills: ["AI/ML", "Next.js", "Python", "Django"]
+    skills: ["AI/ML", "Python", "Django"]
   },
   {
     name: "Divyansh Pokharna",
